@@ -1,6 +1,8 @@
 import pygame
 from settings import *
-name=GTA6
+
+
+name = "GTA6"
 
 class Game:
     def __init__(self):
