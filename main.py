@@ -2,12 +2,12 @@ import pygame
 from settings import *
 
 
-name = "GTA6"
+NAME = "GTA6"
 
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((1000, 1000))
-        pygame.display.set_caption(name)
+        pygame.display.set_caption(NAME)
         self.clock = pygame.time.Clock()
         self.running = True
 
@@ -32,3 +32,11 @@ class Game:
         self.screen.fill((30, 30, 30))
         self.all_sprites.draw(self.screen)
         pygame.display.flip()
+
+if __name__ == "__main__":
+    pygame.init()
+
+    game = Game()
+    game.run()
+
+    pygame.quit()
