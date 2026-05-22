@@ -1,7 +1,6 @@
 import pygame
 from settings import *
 
-
 NAME = "GTA6"
 
 class Game:
