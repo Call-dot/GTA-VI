@@ -2,10 +2,12 @@ import pygame
 from settings import *
 
 NAME = "GTA6"
+WIDTH = 1068
+HEIGHT = 768
 
 class Game:
     def __init__(self):
-        self.screen = pygame.display.set_mode((1000, 1000))
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption(NAME)
         self.clock = pygame.time.Clock()
         self.running = True
