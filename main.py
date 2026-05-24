@@ -9,7 +9,6 @@ WIDTH = 1068
 HEIGHT = 768
 X_CENTRE = WIDTH / 2
 Y_CENTRE = HEIGHT / 2
-TILESIZE = 2
 
 class Game:
     def __init__(self):
@@ -42,8 +41,16 @@ class Game:
         self.friction = 0.67 #px/s^2
         self.max_speed = 300
         
-        # Timestamps
+        # Utils
+        self.tile_size_y = 90
+        self.tile_size_x = 110
+        self.line_size_y = 90
+        self.line_size_x = 10
+        self.tiles = []
+        self.scroll_offset = 0
+        self.x_offset = 0
         self.ts_down = 0
+        self.bg_tiler_init()
 
     def run(self):
         while self.running:
@@ -51,8 +58,9 @@ class Game:
             self.events()
             self.playerinput(self.dt)
             self.update()
-            self.bg_blitter()
+            self.bg_tiler()
             self.draw()
+            print(len(self.tiles))
 
     def events(self):
         for event in pygame.event.get():
@@ -105,23 +113,71 @@ class Game:
 
     def draw(self):
         self.screen.fill((100, 100, 100))
+        self.bg_blitter()
         self.all_sprites.draw(self.screen)        
         self.screen.blit(
-            self.assets.get_image("road_tile"),
-            (X_CENTRE, Y_CENTRE + self.playerspeed)
+            self.assets.get_image("weathered_pattern_5"),
+            (X_CENTRE + 300, Y_CENTRE - 100 + self.playerspeed)
         )
-        pygame.draw.rect(self.screen, "Green", (200, 200, 200, 200))
+        pygame.draw.rect(self.screen, "Green", (100, 200, 167, 169))
         pygame.display.flip()
+
+    def bg_generator(self):
+        """Generates strings for bgtiler"""
+        # R = road
+        # L = white line
+        # Y = yellow line
+        # _ = placeholder
+        return "_RLRYRLR_"
+
 
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
+        self.scroll_offset += self.playerspeed * self.dt
 
+        while self.scroll_offset >= self.tile_size_y:
+            self.scroll_offset -= self.tile_size_y
+            self.tiles.pop()
+            self.tiles.insert(
+                0,
+                self.bg_generator()
+            )
+
+    def bg_tiler_init(self):
+        rows_needed = HEIGHT // self.tile_size_y + 5
+        for _ in range(rows_needed):
+            self.tiles.append("__RLRYRLR__")
 
     def bg_blitter(self):
         """Renders the text from bg_tiler into road images"""
+        for row_index, row in enumerate(self.tiles):
+            y = (row_index - 1) * self.tile_size_y + self.scroll_offset
+            road_width = (len(row) - 1) / 2 * (self.tile_size_x + self.line_size_x)
+            x_start = X_CENTRE - road_width / 2
+            #half_road_width = (len(row) - 1) / 2 * (self.tile_size_x + self.line_size_x) + self.line_size_x * 2
+            
+            for col_index, char in enumerate(row):
+                if char == "R":
+                    img = self.assets.get_image("road_tile")
+
+                elif char == "L":
+                    img = self.assets.get_image("white_dashed_road_line")
+
+                elif char == "Y":
+                    img = self.assets.get_image("yellow_solid_road_line")
+                
+                else:
+                    continue
+                
+                img_rect = img.get_rect()
+                img_rect.center = (x_start + (self.tile_size_x + self.line_size_x) / 2 * col_index, y)
+
+                self.screen.blit(img, img_rect)
+                
+
         
     def debug(self, msg):
-        print(msg)
+        print("\n", msg)
         print("playermode:", self.playermode)
         print("playerspeed:", self.playerspeed)
         print("playerdir:", self.playerdir)
