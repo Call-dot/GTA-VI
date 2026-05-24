@@ -146,12 +146,12 @@ class Game:
     def bg_tiler_init(self):
         rows_needed = HEIGHT // self.tile_size_y + 5
         for _ in range(rows_needed):
-            self.tiles.append("__RLRYRLR__")
+            self.tiles.append("__RYRYRYR__")
 
     def bg_blitter(self):
         """Renders the text from bg_tiler into road images"""
         for row_index, row in enumerate(self.tiles):
-            y = (row_index - 1) * self.tile_size_y + self.scroll_offset
+            y = HEIGHT - ((row_index - 1) * self.tile_size_y + self.scroll_offset)
             road_width = (len(row) - 1) / 2 * (self.tile_size_x + self.line_size_x)
             x_start = X_CENTRE - road_width / 2
             #half_road_width = (len(row) - 1) / 2 * (self.tile_size_x + self.line_size_x) + self.line_size_x * 2
