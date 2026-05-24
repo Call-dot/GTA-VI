@@ -26,7 +26,8 @@ class Game:
         # This variable controls whether the player is currently trying to accelerate
         # Is directly updated by player
         # Accelerating = 1
-        # Braking = 0
+        # Braking = 2
+        # Neutral = 0
         self.playermode = 0
         # This variable is updated by another function when player presses down arrow
         # Pixels per second downward
@@ -37,7 +38,8 @@ class Game:
         # right = 2
         self.playerdir = 0
 
-        self.friction = -10 #px/s^2
+        self.brake_power = 2
+        self.friction = 0.67 #px/s^2
         self.max_speed = 300
         
         # Timestamps
@@ -66,11 +68,15 @@ class Game:
         
         # Fast/slow
         if keys[pygame.K_DOWN]:
+            self.playermode = 1
             self.accelerate()
             self.debug("FORWARD!")
+        elif keys[pygame.K_UP]:
+            self.playermode = 2
+            self.decelerate(self.brake_power)
         else:
-            self.decelerate()
-            # self.debug("SLOW DOWN!")
+            self.playermode = 0
+            self.decelerate(self.friction)
 
         # Steering
         if keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
@@ -86,8 +92,8 @@ class Game:
         acceleration = (self.max_speed - self.playerspeed) * 2
         self.playerspeed += acceleration * self.dt
         
-    def decelerate(self):
-        deceleration = (0 - self.playerspeed) * 2
+    def decelerate(self, friction):
+        deceleration = (0 - self.playerspeed) * friction
         print(self.playerspeed, "+=", deceleration, "*", self.dt)
         self.playerspeed += deceleration * self.dt
 
@@ -102,12 +108,14 @@ class Game:
         self.all_sprites.draw(self.screen)        
         self.screen.blit(
             self.assets.get_image("road_tile"),
-            (X_CENTRE + self.playerspeed, Y_CENTRE)
+            (X_CENTRE, Y_CENTRE + self.playerspeed)
         )
+        pygame.draw.rect(self.screen, "Green", (200, 200, 200, 200))
         pygame.display.flip()
 
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
+
 
     def bg_blitter(self):
         """Renders the text from bg_tiler into road images"""
