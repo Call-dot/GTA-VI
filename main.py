@@ -94,6 +94,9 @@ class Game:
                 keys = pygame.key.get_pressed()
                 if keys[pygame.K_DOWN]:
                     self.ts_down = self.dt
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = event.pos 
+                print(f"Mouse Clicked at X: {mouse_x}, Y: {mouse_y}")
 
     def playerinput(self, dt):
         keys = pygame.key.get_pressed()
@@ -154,6 +157,12 @@ class Game:
 
         # Move car
         self.player_x += self.player_vx * self.dt
+        #Boundaries
+        if self.player_x > WIDTH+40:
+            self.player_x = -40
+        
+        elif self.player_x < -50:
+            self.player_x = WIDTH+39
 
     def vibes(self, dt):
         pass
@@ -175,6 +184,19 @@ class Game:
             center=(self.player_x, self.player_y)
         )
         self.screen.blit(player_rotated, rect)    
+
+        half_width = rect.width / 2
+        
+       
+        if self.player_x < half_width:
+            ghost_rect = player_rotated.get_rect(center=(self.player_x + WIDTH, self.player_y))
+            self.screen.blit(player_rotated, ghost_rect)
+            
+        
+        elif self.player_x > WIDTH - half_width:
+            ghost_rect = player_rotated.get_rect(center=(self.player_x - WIDTH, self.player_y))
+            self.screen.blit(player_rotated, ghost_rect)
+
         pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169))
         pygame.display.flip()
 
