@@ -158,11 +158,11 @@ class Game:
         # Move car
         self.player_x += self.player_vx * self.dt
         #Boundaries
-        if self.player_x > WIDTH+40:
+        if self.player_x > WIDTH+50:
             self.player_x = -40
         
         elif self.player_x < -50:
-            self.player_x = WIDTH+39
+            self.player_x = WIDTH+40
 
     def vibes(self, dt):
         pass
@@ -187,12 +187,10 @@ class Game:
 
         half_width = rect.width / 2
         
-       
         if self.player_x < half_width:
             ghost_rect = player_rotated.get_rect(center=(self.player_x + WIDTH, self.player_y))
             self.screen.blit(player_rotated, ghost_rect)
             
-        
         elif self.player_x > WIDTH - half_width:
             ghost_rect = player_rotated.get_rect(center=(self.player_x - WIDTH, self.player_y))
             self.screen.blit(player_rotated, ghost_rect)
