@@ -15,6 +15,9 @@ SEED = random.randrange(2147483647)
 BRAKE_POWER = 2
 FRICTION = 0.67 #px/s^2
 MAX_SPEED = 420
+MAX_TURN_SPEED = 300      # px/s
+HANDLING = 5              # larger = snappier
+AUTO_LANE_ALIGN = True
 DEBUG = True
 
 TILE_SIZE_Y = 90
@@ -38,10 +41,10 @@ class Game:
         self.assets.load_images()
         self.assets.load_music()
 
+        self.player_img = self.assets.get_image("red_car")
         pygame.mixer.music.load(
             self.assets.get_music("theme")
         )
-
         pygame.mixer.music.play(-1)
 
         # This variable controls whether the player is currently trying to accelerate
@@ -58,6 +61,10 @@ class Game:
         # left = 1
         # right = 2
         self.playerdir = 0
+
+        self.player_x = X_CENTRE
+        self.player_y = HEIGHT - 200
+        self.player_vx = 0
         
         # Utils
         self.tiles = []
@@ -72,6 +79,7 @@ class Game:
             self.dt = self.clock.tick(30) / 1000
             self.events()
             self.playerinput(self.dt)
+            self.player()
             self.update()
             self.bg_tiler()
             self.draw()
@@ -124,8 +132,30 @@ class Game:
         if DEBUG:
             print(self.playerspeed, "+=", deceleration, "*", self.dt)
         self.playerspeed += deceleration * self.dt
+    
+    def player(self):
+        # Desired sideways velocity
+        if self.playerdir == 1:
+            target_v = -MAX_TURN_SPEED
 
-    def left_right(self, dt):
+        elif self.playerdir == 2:
+            target_v = MAX_TURN_SPEED
+
+        else:
+            if AUTO_LANE_ALIGN:
+                target_v = 0
+            else:
+                target_v = self.player_vx
+
+        # Smoothly approach target velocity
+        self.player_vx += (
+            target_v - self.player_vx
+        ) * HANDLING * self.dt
+
+        # Move car
+        self.player_x += self.player_vx * self.dt
+
+    def vibes(self, dt):
         pass
 
     def update(self):
@@ -134,7 +164,17 @@ class Game:
     def draw(self):
         self.screen.fill((100, 100, 100))
         self.bg_blitter()
-        self.all_sprites.draw(self.screen)        
+        self.all_sprites.draw(self.screen)  
+
+        angle = self.player_vx * 0.05
+        player_rotated = pygame.transform.rotate(
+            self.player_img,
+            angle + 180
+        )
+        rect = player_rotated.get_rect(
+            center=(self.player_x, self.player_y)
+        )
+        self.screen.blit(player_rotated, rect)    
         pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169))
         pygame.display.flip()
 
@@ -152,7 +192,6 @@ class Game:
             # Y = yellow line
             # _ = placeholder
             return "_RLRYRLR_"
-
 
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
@@ -203,7 +242,6 @@ class Game:
                     self.screen.blit(weathering, img_rect)
                 
 
-        
     def debugger(self, msg):
         print("\n", msg)
         print("playermode:", self.playermode)
