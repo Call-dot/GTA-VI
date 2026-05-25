@@ -2,7 +2,7 @@ import pygame
 import random
 from settings import *
 from systems.asset_loader import AssetLoader
-from entities.tile import Tile
+from entities.tiler import Tiler
 
 
 NAME = "GTA6"
