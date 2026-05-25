@@ -3,7 +3,7 @@ import random
 from settings import *
 from systems.asset_loader import AssetLoader
 from entities.tiler import Tiler
-
+from data.biomes import BIOMES
 
 NAME = "GTA6"
 WIDTH = 1068
@@ -18,13 +18,14 @@ MAX_SPEED = 420
 MAX_TURN_SPEED = 300      # px/s
 HANDLING = 5              # larger = snappier
 AUTO_LANE_ALIGN = True
-DEBUG = True
+DEBUG = False
 
 TILE_SIZE_Y = 90
 TILE_SIZE_X = 110
 LINE_SIZE_Y = 90
 LINE_SIZE_X = 10
 NUM_WEATHERING_PATTERNS = 8
+DRIVING_SIDE = "right"
 
 class Game:
     def __init__(self):
@@ -69,10 +70,13 @@ class Game:
         # Utils
         self.tiles = []
         self.weathering = []
+        self.trees = []
+        self.rocks = []
         self.scroll_offset = 0
         self.x_offset = 0
         self.ts_down = 0
         self.bg_tiler_init()
+        self.current_biome = BIOMES["forest"]
 
     def run(self):
         while self.running:
@@ -197,6 +201,28 @@ class Game:
 
         pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169))
         pygame.display.flip()
+
+    def scenery_generator(self, type=None):
+        """Carey this is for you, I want this function to generate random scenery"""
+        if type == "tree":
+            pass #tree generator
+        elif type == "rocks":
+            pass #rock generator
+        #If you don't know how to go about this, do as I've done for bg_generator() 
+    
+    def scenery_tiler(self):
+        """
+        Carey this is also for you, this function should do the same thing as bg_tiler() but for trees + rocks
+        Save your trees and rocks in self.trees and self.rocks
+        """
+        pass
+    
+    def scenery_blitter(self):
+        """
+        Carey this is also for you, this function should do the same thing as bg_blitter() but for trees + rocks
+        Scenery should only render in locations not covered by a road
+        """
+        pass
 
     def bg_generator(self, type=None):
         """Generates strings for bgtiler"""
