@@ -4,6 +4,7 @@ from pathlib import Path
 class AssetLoader:
     def __init__(self):
         self.images = {}
+        self.music = {}
 
     def load_images(self):
         image_dir = Path("assets/images")
@@ -68,5 +69,13 @@ class AssetLoader:
             image_dir / "camo_car.png"
         ).convert_alpha()
 
+    def load_music(self):
+        music_dir = Path("assets/music")
+
+        self.music["theme"] = music_dir / "GTA6_theme_song.mp3"
+
     def get_image(self, name):
         return self.images[name]
+
+    def get_music(self, name):
+        return self.music[name]

@@ -36,6 +36,13 @@ class Game:
         # Run AssetLoader and save it in self.assets
         self.assets = AssetLoader()
         self.assets.load_images()
+        self.assets.load_music()
+
+        pygame.mixer.music.load(
+            self.assets.get_music("theme")
+        )
+
+        pygame.mixer.music.play(-1)
 
         # This variable controls whether the player is currently trying to accelerate
         # Is directly updated by player
