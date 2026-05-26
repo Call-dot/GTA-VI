@@ -3,7 +3,7 @@ import random
 from settings import *
 from systems.asset_loader import AssetLoader
 from entities.tiler import Tiler
-from data.biomes import BIOMES
+from levels.biomes import BIOMES
 
 NAME = "GTA6"
 WIDTH = 1068
@@ -68,6 +68,7 @@ class Game:
         self.player_vx = 0
         
         # Utils
+        self.t = 0
         self.tiles = []
         self.weathering = []
         self.trees = []
@@ -81,6 +82,7 @@ class Game:
     def run(self):
         while self.running:
             self.dt = self.clock.tick(30) / 1000
+            self.t += self.dt
             self.events()
             self.playerinput(self.dt)
             self.player()
@@ -237,7 +239,12 @@ class Game:
             # L = white line
             # Y = yellow line
             # _ = placeholder
-            return "_RLRYRLR_"
+            if self.t < 10:
+                return "SCRLRYRLRCS"
+            if self.t < 20:
+                return "__SYRYRYS__"
+            else:
+                return "_CRLRYRLRC_"
 
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
@@ -271,12 +278,24 @@ class Game:
                     img = self.assets.get_image("road_tile")
                     weathering = self.assets.get_image("weathered_pattern_" + self.weathering[row_index][col_index // 2])
 
+                elif char == "S":
+                    img = self.assets.get_image("sidewalk_tile")
+                
+                elif char == "C":
+                    img = self.assets.get_image("curb")
+
                 elif char == "L":
                     img = self.assets.get_image("white_dashed_road_line")
 
                 elif char == "Y":
                     img = self.assets.get_image("yellow_solid_road_line")
                 
+                elif char == "<":
+                    img = self.assets.get_image("L_concrete_tile")
+
+                elif char == ">":
+                    img = self.assets.get_image("R_concrete_tile")
+
                 else:
                     continue
                 
@@ -286,6 +305,8 @@ class Game:
                 self.screen.blit(img, img_rect)
                 if char == "R":
                     self.screen.blit(weathering, img_rect)
+                if char == "S":
+                    pass
                 
 
     def debugger(self, msg):
