@@ -10,14 +10,14 @@ BIOMES = {
         "road_weathering": 0.2
     },
 
-    "forest": {
+    "spring": {
         "tree_density": 0.9,
         "background_images": [],
         "particle_effect": None,
         "road_weathering": 0.5
     },
 
-    "winter": {
+    "grassland": {
         "tree_density": 0.4,
         "background_images": [],
         "particle_effect": "snow",
