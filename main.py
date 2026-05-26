@@ -47,10 +47,6 @@ class Game:
         self.assets.load_music()
 
         self.player_img = self.assets.get_image("red_car")
-        pygame.mixer.music.load(
-            self.assets.get_music("theme")
-        )
-        pygame.mixer.music.play(-1)
 
         # This variable controls whether the player is currently trying to accelerate
         # Is directly updated by player
@@ -87,7 +83,9 @@ class Game:
             self.corner_test = True
 
     def run(self):
+        self.vlc("menu")
         self.select_car_menu()
+        self.vlc("theme")
         while self.running:
             self.dt = self.clock.tick(30) / 1000
             self.t += self.dt
@@ -403,7 +401,12 @@ class Game:
                     self.screen.blit(weathering, img_rect)
                 if char == "S":
                     pass
-                
+
+    def vlc(self, music):
+        pygame.mixer.music.load(
+            self.assets.get_music(music)
+        )
+        pygame.mixer.music.play(-1)
 
     def debugger(self, msg):
         print("\n", msg)

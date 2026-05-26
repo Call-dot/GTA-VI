@@ -10,7 +10,7 @@ BIOMES = {
         "road_weathering": 0.2
     },
 
-    "spring": {
+    "forest": {
         "tree_density": 0.9,
         "background_images": [],
         "particle_effect": None,
