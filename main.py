@@ -16,6 +16,7 @@ BRAKE_POWER = 2
 FRICTION = 0.67 #px/s^2
 MAX_SPEED = 420
 MAX_TURN_SPEED = 300      # px/s
+REVERSE_SPEED = -67
 HANDLING = 5              # larger = snappier
 AUTO_LANE_ALIGN = True
 DEBUG = True
@@ -118,7 +119,7 @@ class Game:
                 self.debugger("FORWARD!")
         elif keys[pygame.K_UP]:
             self.playermode = 2
-            self.decelerate(BRAKE_POWER)
+            self.reverse(BRAKE_POWER)
         else:
             self.playermode = 0
             self.decelerate(FRICTION)
@@ -141,6 +142,12 @@ class Game:
         
     def decelerate(self, friction):
         deceleration = (0 - self.playerspeed) * friction
+        if DEBUG:
+            print(self.playerspeed, "+=", deceleration, "*", self.dt)
+        self.playerspeed += deceleration * self.dt
+
+    def reverse(self, friction):
+        deceleration = (REVERSE_SPEED - self.playerspeed) * friction
         if DEBUG:
             print(self.playerspeed, "+=", deceleration, "*", self.dt)
         self.playerspeed += deceleration * self.dt
