@@ -18,7 +18,7 @@ MAX_SPEED = 420
 MAX_TURN_SPEED = 300      # px/s
 HANDLING = 5              # larger = snappier
 AUTO_LANE_ALIGN = True
-DEBUG = False
+DEBUG = True
 
 TILE_SIZE_Y = 90
 TILE_SIZE_X = 110
@@ -78,6 +78,9 @@ class Game:
         self.ts_down = 0
         self.bg_tiler_init()
         self.current_biome = BIOMES["forest"]
+
+        if DEBUG:
+            self.corner_test = True
 
     def run(self):
         while self.running:
@@ -159,7 +162,8 @@ class Game:
         # Smoothly approach target velocity
         self.player_vx += (
             target_v - self.player_vx
-        ) * HANDLING * self.dt
+        ) * HANDLING * self.dt 
+        self.player_vx *= (self.playerspeed / MAX_SPEED)
 
         # Move car
         self.player_x += self.player_vx * self.dt
@@ -240,11 +244,14 @@ class Game:
             # Y = yellow line
             # _ = placeholder
             if self.t < 10:
-                return "SCRLRYRLRCS"
-            if self.t < 20:
-                return "__SYRYRYS__"
+                return "__S|.|.|S__"
+            elif self.t < 20:
+                return "SC./.|./.CS"
+            elif self.corner_test:
+                self.corner_test = False
+                return "1-./.|./.-2"
             else:
-                return "_CRLRYRLRC_"
+                return "_-./.|./.C_"
 
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
@@ -260,7 +267,7 @@ class Game:
     def bg_tiler_init(self):
         rows_needed = HEIGHT // TILE_SIZE_Y + 5
         for _ in range(rows_needed):
-            self.tiles.append("__RYRYRYR__")
+            self.tiles.append("__.|.|.|.__")
             self.weathering.append(self.bg_generator("weathering"))
         if DEBUG:
             print(self.weathering)
@@ -274,7 +281,7 @@ class Game:
             #half_road_width = (len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X) + LINE_SIZE_X * 2
             
             for col_index, char in enumerate(row):
-                if char == "R":
+                if char == ".":
                     img = self.assets.get_image("road_tile")
                     weathering = self.assets.get_image("weathered_pattern_" + self.weathering[row_index][col_index // 2])
 
@@ -283,11 +290,14 @@ class Game:
                 
                 elif char == "C":
                     img = self.assets.get_image("curb")
+                
+                elif char == "-":
+                    img = self.assets.get_image("no_road_line")
 
-                elif char == "L":
+                elif char == "/":
                     img = self.assets.get_image("white_dashed_road_line")
 
-                elif char == "Y":
+                elif char == "|":
                     img = self.assets.get_image("yellow_solid_road_line")
                 
                 elif char == "<":
@@ -296,6 +306,19 @@ class Game:
                 elif char == ">":
                     img = self.assets.get_image("R_concrete_tile")
 
+                elif char == "1":
+                    img = self.assets.get_image("UL_concrete_corner")
+
+                elif char == "2":
+                    img = self.assets.get_image("UR_concrete_corner")
+
+                elif char == "3":
+                    img = self.assets.get_image("DL_concrete_corner")
+                
+                elif char == "4":
+                    img = self.assets.get_image("DR_concrete_corner")
+
+
                 else:
                     continue
                 
@@ -303,7 +326,7 @@ class Game:
                 img_rect.center = (x_start + (TILE_SIZE_X + LINE_SIZE_X) / 2 * col_index, y)
 
                 self.screen.blit(img, img_rect)
-                if char == "R":
+                if char == ".":
                     self.screen.blit(weathering, img_rect)
                 if char == "S":
                     pass
