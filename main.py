@@ -38,6 +38,9 @@ class Game:
         random.seed(SEED)
         print(SEED)
 
+        self.car_options = ["red_car", "pink_car", "camo_car", "babyblue_car"]
+        self.player_img = None
+
         # Run AssetLoader and save it in self.assets
         self.assets = AssetLoader()
         self.assets.load_images()
@@ -84,6 +87,7 @@ class Game:
             self.corner_test = True
 
     def run(self):
+        self.select_car_menu()
         while self.running:
             self.dt = self.clock.tick(30) / 1000
             self.t += self.dt
@@ -95,6 +99,68 @@ class Game:
             self.draw()
             if DEBUG:
                 print(len(self.tiles))
+
+    def select_car_menu(self):
+        """Displays a car selection menu before starting the game."""
+        selecting = True
+        font = pygame.font.SysFont("Arial", 40, bold=True)
+        
+        # Define layout parameters for the selection cards
+        card_w, card_h = 200, 200
+        spacing = 40
+        start_x = X_CENTRE - ((card_w * 4 + spacing * 3) / 2)
+        y_pos = Y_CENTRE - 50
+
+        # Construct collision bounding rects for each choice
+        rects = []
+        for i in range(4):
+            x = start_x + i * (card_w + spacing)
+            rects.append(pygame.Rect(x, y_pos, card_w, card_h))
+
+        while selecting:
+            self.screen.fill((40, 40, 45))
+            
+            # Title text rendering
+            title_surf = font.render("CHOOSE YOUR VEHICLE", True, (255, 255, 255))
+            title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 4))
+            self.screen.blit(title_surf, title_rect)
+
+            # Event loop monitoring selection input
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    import sys
+                    sys.exit()
+                
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = event.pos
+                    # Evaluate if choice regions intersect click coordinates
+                    for idx, rect in enumerate(rects):
+                        if rect.collidepoint(mouse_pos):
+                            chosen_key = self.car_options[idx]
+                            self.player_img = self.assets.get_image(chosen_key)
+                            selecting = False # Exit selection loop, initializing run sequence
+            
+            # Rendering cards and visual feedback
+            mouse_pos = pygame.mouse.get_pos()
+            for idx, rect in enumerate(rects):
+                # Hover detection styling
+                if rect.collidepoint(mouse_pos):
+                    color = (0, 200, 100)
+                    border = 6
+                else:
+                    color = (200, 200, 200)
+                    border = 2
+                
+                pygame.draw.rect(self.screen, color, rect, border, border_radius=10)
+                
+                # Fetch corresponding asset and render centralized inside card UI
+                car_surface = self.assets.get_image(self.car_options[idx])
+                car_rect = car_surface.get_rect(center=rect.center)
+                self.screen.blit(car_surface, car_rect)
+
+            pygame.display.flip()
+            self.clock.tick(30)
 
     def events(self):
         for event in pygame.event.get():
@@ -204,13 +270,13 @@ class Game:
 
         half_width = rect.width / 2
         
-        if self.player_x < half_width:
-            ghost_rect = player_rotated.get_rect(center=(self.player_x + WIDTH, self.player_y))
-            self.screen.blit(player_rotated, ghost_rect)
+        #if self.player_x < half_width:
+            #ghost_rect = player_rotated.get_rect(center=(self.player_x + WIDTH, self.player_y))
+            #self.screen.blit(player_rotated, ghost_rect)
             
-        elif self.player_x > WIDTH - half_width:
-            ghost_rect = player_rotated.get_rect(center=(self.player_x - WIDTH, self.player_y))
-            self.screen.blit(player_rotated, ghost_rect)
+        #elif self.player_x > WIDTH - half_width:
+            #ghost_rect = player_rotated.get_rect(center=(self.player_x - WIDTH, self.player_y))
+            #self.screen.blit(player_rotated, ghost_rect)
 
         pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169))
         pygame.display.flip()
