@@ -21,16 +21,16 @@ class Enemy(pygame.sprite.Sprite):
     def update(self, dt):
         self.chase_player(dt)
 
-        # Move vertically
+        #move vertically
         self.y += (self.speed - self.game.playerspeed) * dt
 
-        # Move horizontally
+        #move horizontally
         self.x += self.vx * dt
 
-        # Update rect
+        #update
         self.rect.center = (self.x, self.y)
 
-        # Rotate enemy based on turning
+        #rotate turning
         angle = -self.vx * 0.05
 
         self.image = pygame.transform.rotate(
@@ -38,23 +38,21 @@ class Enemy(pygame.sprite.Sprite):
             angle + 180
         )
 
-        # Keep same center after rotation
         self.rect = self.image.get_rect(
             center=self.rect.center
         )
 
-        # Delete enemy if off screen
+        #Delete enemy off screen
         if self.y > HEIGHT + 200:
             self.kill()
 
     def chase_player(self, dt):
         player_x = self.game.player_x
 
-        # Distance to player
+        #D to player
         direction = player_x - self.x
 
-        # Steer toward player
         self.vx += direction * self.turn_speed * dt
 
-        # Limit turn speed
+        #speed limit
         self.vx = max(-250, min(250, self.vx))
