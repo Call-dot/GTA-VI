@@ -1,7 +1,7 @@
 #UNUSED, example syntax for later
 import pygame
 
-class Tile(pygame.sprite.Sprite):
+class Example(pygame.sprite.Sprite):
     def __init__(self, game, image, x, y):
         #Adds the tile to game.all_sprites
         super().__init__(game.all_sprites)
@@ -23,5 +23,5 @@ class Tile(pygame.sprite.Sprite):
 
 # for y in range(-2, HEIGHT // TILESIZE + 2):
 #     for x in range(WIDTH // TILESIZE):
-#         tile = Tile(self, babyblue_car, x * TILESIZE, y * TILESIZE)
+#         tile = Example(self, babyblue_car, x * TILESIZE, y * TILESIZE)
 #         self.road_tiles.append(tile)

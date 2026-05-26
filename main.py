@@ -2,8 +2,8 @@ import pygame
 import random
 from settings import *
 from systems.asset_loader import AssetLoader
-from entities.tile import Tile
-
+from entities.tiler import Tiler
+from levels.biomes import BIOMES
 
 NAME = "GTA6"
 WIDTH = 1068
@@ -16,6 +16,7 @@ BRAKE_POWER = 2
 FRICTION = 0.67 #px/s^2
 MAX_SPEED = 420
 MAX_TURN_SPEED = 300      # px/s
+REVERSE_SPEED = -67
 HANDLING = 5              # larger = snappier
 AUTO_LANE_ALIGN = True
 DEBUG = True
@@ -25,6 +26,7 @@ TILE_SIZE_X = 110
 LINE_SIZE_Y = 90
 LINE_SIZE_X = 10
 NUM_WEATHERING_PATTERNS = 8
+DRIVING_SIDE = "right"
 
 class Game:
     def __init__(self):
@@ -35,6 +37,9 @@ class Game:
         self.all_sprites = pygame.sprite.Group()
         random.seed(SEED)
         print(SEED)
+
+        self.car_options = ["red_car", "pink_car", "camo_car", "babyblue_car"]
+        self.player_img = None
 
         # Run AssetLoader and save it in self.assets
         self.assets = AssetLoader()
@@ -67,16 +72,25 @@ class Game:
         self.player_vx = 0
         
         # Utils
+        self.t = 0
         self.tiles = []
         self.weathering = []
+        self.trees = []
+        self.rocks = []
         self.scroll_offset = 0
         self.x_offset = 0
         self.ts_down = 0
         self.bg_tiler_init()
+        self.current_biome = BIOMES["forest"]
+
+        if DEBUG:
+            self.corner_test = True
 
     def run(self):
+        self.select_car_menu()
         while self.running:
             self.dt = self.clock.tick(30) / 1000
+            self.t += self.dt
             self.events()
             self.playerinput(self.dt)
             self.player()
@@ -86,6 +100,68 @@ class Game:
             if DEBUG:
                 print(len(self.tiles))
 
+    def select_car_menu(self):
+        """Displays a car selection menu before starting the game."""
+        selecting = True
+        font = pygame.font.SysFont("Arial", 40, bold=True)
+        
+        # Define layout parameters for the selection cards
+        card_w, card_h = 200, 200
+        spacing = 40
+        start_x = X_CENTRE - ((card_w * 4 + spacing * 3) / 2)
+        y_pos = Y_CENTRE - 50
+
+        # Construct collision bounding rects for each choice
+        rects = []
+        for i in range(4):
+            x = start_x + i * (card_w + spacing)
+            rects.append(pygame.Rect(x, y_pos, card_w, card_h))
+
+        while selecting:
+            self.screen.fill((40, 40, 45))
+            
+            # Title text rendering
+            title_surf = font.render("CHOOSE YOUR VEHICLE", True, (255, 255, 255))
+            title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 4))
+            self.screen.blit(title_surf, title_rect)
+
+            # Event loop monitoring selection input
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    import sys
+                    sys.exit()
+                
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = event.pos
+                    # Evaluate if choice regions intersect click coordinates
+                    for idx, rect in enumerate(rects):
+                        if rect.collidepoint(mouse_pos):
+                            chosen_key = self.car_options[idx]
+                            self.player_img = self.assets.get_image(chosen_key)
+                            selecting = False # Exit selection loop, initializing run sequence
+            
+            # Rendering cards and visual feedback
+            mouse_pos = pygame.mouse.get_pos()
+            for idx, rect in enumerate(rects):
+                # Hover detection styling
+                if rect.collidepoint(mouse_pos):
+                    color = (0, 200, 100)
+                    border = 6
+                else:
+                    color = (200, 200, 200)
+                    border = 2
+                
+                pygame.draw.rect(self.screen, color, rect, border, border_radius=10)
+                
+                # Fetch corresponding asset and render centralized inside card UI
+                car_surface = self.assets.get_image(self.car_options[idx])
+                car_rect = car_surface.get_rect(center=rect.center)
+                self.screen.blit(car_surface, car_rect)
+
+            pygame.display.flip()
+            self.clock.tick(30)
+
     def events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -94,6 +170,9 @@ class Game:
                 keys = pygame.key.get_pressed()
                 if keys[pygame.K_DOWN]:
                     self.ts_down = self.dt
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = event.pos 
+                print(f"Mouse Clicked at X: {mouse_x}, Y: {mouse_y}")
 
     def playerinput(self, dt):
         keys = pygame.key.get_pressed()
@@ -106,7 +185,7 @@ class Game:
                 self.debugger("FORWARD!")
         elif keys[pygame.K_UP]:
             self.playermode = 2
-            self.decelerate(BRAKE_POWER)
+            self.reverse(BRAKE_POWER)
         else:
             self.playermode = 0
             self.decelerate(FRICTION)
@@ -132,6 +211,12 @@ class Game:
         if DEBUG:
             print(self.playerspeed, "+=", deceleration, "*", self.dt)
         self.playerspeed += deceleration * self.dt
+
+    def reverse(self, friction):
+        deceleration = (REVERSE_SPEED - self.playerspeed) * friction
+        if DEBUG:
+            print(self.playerspeed, "+=", deceleration, "*", self.dt)
+        self.playerspeed += deceleration * self.dt
     
     def player(self):
         # Desired sideways velocity
@@ -150,10 +235,17 @@ class Game:
         # Smoothly approach target velocity
         self.player_vx += (
             target_v - self.player_vx
-        ) * HANDLING * self.dt
+        ) * HANDLING * self.dt 
+        self.player_vx *= (self.playerspeed / MAX_SPEED)
 
         # Move car
         self.player_x += self.player_vx * self.dt
+        #Boundaries
+        if self.player_x > WIDTH+50:
+            self.player_x = -40
+        
+        elif self.player_x < -50:
+            self.player_x = WIDTH+40
 
     def vibes(self, dt):
         pass
@@ -175,8 +267,41 @@ class Game:
             center=(self.player_x, self.player_y)
         )
         self.screen.blit(player_rotated, rect)    
+
+        half_width = rect.width / 2
+        
+        #if self.player_x < half_width:
+            #ghost_rect = player_rotated.get_rect(center=(self.player_x + WIDTH, self.player_y))
+            #self.screen.blit(player_rotated, ghost_rect)
+            
+        #elif self.player_x > WIDTH - half_width:
+            #ghost_rect = player_rotated.get_rect(center=(self.player_x - WIDTH, self.player_y))
+            #self.screen.blit(player_rotated, ghost_rect)
+
         pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169))
         pygame.display.flip()
+
+    def scenery_generator(self, type=None):
+        """Carey this is for you, I want this function to generate random scenery"""
+        if type == "tree":
+            pass #tree generator
+        elif type == "rocks":
+            pass #rock generator
+        #If you don't know how to go about this, do as I've done for bg_generator() 
+    
+    def scenery_tiler(self):
+        """
+        Carey this is also for you, this function should do the same thing as bg_tiler() but for trees + rocks
+        Save your trees and rocks in self.trees and self.rocks
+        """
+        pass
+    
+    def scenery_blitter(self):
+        """
+        Carey this is also for you, this function should do the same thing as bg_blitter() but for trees + rocks
+        Scenery should only render in locations not covered by a road
+        """
+        pass
 
     def bg_generator(self, type=None):
         """Generates strings for bgtiler"""
@@ -191,7 +316,15 @@ class Game:
             # L = white line
             # Y = yellow line
             # _ = placeholder
-            return "_RLRYRLR_"
+            if self.t < 10:
+                return "__S|.|.|S__"
+            elif self.t < 20:
+                return "SC./.|./.CS"
+            elif self.corner_test:
+                self.corner_test = False
+                return "1-./.|./.-2"
+            else:
+                return "_-./.|./.C_"
 
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
@@ -207,7 +340,7 @@ class Game:
     def bg_tiler_init(self):
         rows_needed = HEIGHT // TILE_SIZE_Y + 5
         for _ in range(rows_needed):
-            self.tiles.append("__RYRYRYR__")
+            self.tiles.append("__.|.|.|.__")
             self.weathering.append(self.bg_generator("weathering"))
         if DEBUG:
             print(self.weathering)
@@ -221,16 +354,44 @@ class Game:
             #half_road_width = (len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X) + LINE_SIZE_X * 2
             
             for col_index, char in enumerate(row):
-                if char == "R":
+                if char == ".":
                     img = self.assets.get_image("road_tile")
                     weathering = self.assets.get_image("weathered_pattern_" + self.weathering[row_index][col_index // 2])
 
-                elif char == "L":
+                elif char == "S":
+                    img = self.assets.get_image("sidewalk_tile")
+                
+                elif char == "C":
+                    img = self.assets.get_image("curb")
+                
+                elif char == "-":
+                    img = self.assets.get_image("no_road_line")
+
+                elif char == "/":
                     img = self.assets.get_image("white_dashed_road_line")
 
-                elif char == "Y":
+                elif char == "|":
                     img = self.assets.get_image("yellow_solid_road_line")
                 
+                elif char == "<":
+                    img = self.assets.get_image("L_concrete_tile")
+
+                elif char == ">":
+                    img = self.assets.get_image("R_concrete_tile")
+
+                elif char == "1":
+                    img = self.assets.get_image("UL_concrete_corner")
+
+                elif char == "2":
+                    img = self.assets.get_image("UR_concrete_corner")
+
+                elif char == "3":
+                    img = self.assets.get_image("DL_concrete_corner")
+                
+                elif char == "4":
+                    img = self.assets.get_image("DR_concrete_corner")
+
+
                 else:
                     continue
                 
@@ -238,8 +399,10 @@ class Game:
                 img_rect.center = (x_start + (TILE_SIZE_X + LINE_SIZE_X) / 2 * col_index, y)
 
                 self.screen.blit(img, img_rect)
-                if char == "R":
+                if char == ".":
                     self.screen.blit(weathering, img_rect)
+                if char == "S":
+                    pass
                 
 
     def debugger(self, msg):

@@ -13,6 +13,34 @@ class AssetLoader:
             image_dir / "road_tile.png"
         ).convert_alpha()
 
+        self.images["sidewalk_tile"] = pygame.image.load(
+            image_dir / "sidewalk_tile.png"
+        ).convert_alpha()
+
+        self.images["L_concrete_tile"] = pygame.image.load(
+            image_dir / "L_concrete_tile.png"
+        ).convert_alpha()
+
+        self.images["R_concrete_tile"] = pygame.image.load(
+            image_dir / "R_concrete_tile.png"
+        ).convert_alpha()
+
+        self.images["UL_concrete_corner"] = pygame.image.load(
+            image_dir / "UL_concrete_corner.png"
+        ).convert_alpha()
+
+        self.images["UR_concrete_corner"] = pygame.image.load(
+            image_dir / "UR_concrete_corner.png"
+        ).convert_alpha()
+
+        self.images["DL_concrete_corner"] = pygame.image.load(
+            image_dir / "DL_concrete_corner.png"
+        ).convert_alpha()
+
+        self.images["DR_concrete_corner"] = pygame.image.load(
+            image_dir / "DR_concrete_corner.png"
+        ).convert_alpha()
+
         self.images["weathered_pattern_1"] = pygame.image.load(
             image_dir / "weathered_pattern_1.png"
         ).convert_alpha()
@@ -43,6 +71,14 @@ class AssetLoader:
 
         self.images["weathered_pattern_8"] = pygame.image.load(
             image_dir / "weathered_pattern_8.png"
+        ).convert_alpha()
+
+        self.images["curb"] = pygame.image.load(
+            image_dir / "curb.png"
+        ).convert_alpha()
+
+        self.images["no_road_line"] = pygame.image.load(
+            image_dir / "no_road_line.png"
         ).convert_alpha()
 
         self.images["white_dashed_road_line"] = pygame.image.load(
