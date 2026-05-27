@@ -51,14 +51,13 @@ class Game:
         self.assets.load_images()
         self.assets.load_music()
 
-<<<<<<< HEAD
-        pygame.mixer.music.load(
-            self.assets.get_music("theme")
-        )
-        pygame.mixer.music.play(-1)
-=======
-        self.player_img = self.assets.get_image("red_car")
->>>>>>> 6865a59f33f19178a1c586f3dc96bc18f52b4a64
+
+    #pygame.mixer.music.load(
+        #self.assets.get_music("theme")
+    #)
+    #pygame.mixer.music.play(-1)
+
+   
 
         # This variable controls whether the player is currently trying to accelerate
         # Is directly updated by player
