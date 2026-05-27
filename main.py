@@ -4,6 +4,7 @@ from settings import *
 from systems.asset_loader import AssetLoader
 from entities.tiler import Tiler
 from levels.biomes import BIOMES
+from entities.npc import Npc
 
 NAME = "GTA6"
 WIDTH = 1068
@@ -15,11 +16,11 @@ SEED = random.randrange(2147483647)
 BRAKE_POWER = 2
 FRICTION = 0.67 #px/s^2
 MAX_SPEED = 420
-MAX_TURN_SPEED = 300      # px/s
-REVERSE_SPEED = -67
+MAX_TURN_SPEED = 420      # px/s
+REVERSE_SPEED = -69
 HANDLING = 5              # larger = snappier
 AUTO_LANE_ALIGN = True
-DEBUG = True
+DEBUG = False
 
 TILE_SIZE_Y = 90
 TILE_SIZE_X = 110
@@ -27,6 +28,7 @@ LINE_SIZE_Y = 90
 LINE_SIZE_X = 10
 NUM_WEATHERING_PATTERNS = 8
 DRIVING_SIDE = "right"
+TRAFFIC = 0.02
 
 class Game:
     def __init__(self):
@@ -34,7 +36,10 @@ class Game:
         pygame.display.set_caption(NAME)
         self.clock = pygame.time.Clock()
         self.running = True
+        self.width = WIDTH
+        self.height = HEIGHT
         self.all_sprites = pygame.sprite.Group()
+        self.npcs = pygame.sprite.Group()
         random.seed(SEED)
         print(SEED)
 
@@ -64,7 +69,7 @@ class Game:
         self.playerdir = 0
 
         self.player_x = X_CENTRE
-        self.player_y = HEIGHT - 200
+        self.player_y = HEIGHT - 420
         self.player_vx = 0
         
         # Utils
@@ -79,7 +84,7 @@ class Game:
         self.bg_tiler_init()
         self.current_biome = BIOMES["forest"]
 
-        if DEBUG:
+        if DEBUG or not(DEBUG):
             self.corner_test = True
 
     def run(self):
@@ -249,6 +254,8 @@ class Game:
         pass
 
     def update(self):
+        if random.random() < TRAFFIC:
+            self.spawn_npc()
         self.all_sprites.update(self.dt)
 
     def draw(self):
@@ -276,8 +283,36 @@ class Game:
             #ghost_rect = player_rotated.get_rect(center=(self.player_x - WIDTH, self.player_y))
             #self.screen.blit(player_rotated, ghost_rect)
 
-        pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169))
+        pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169)) # placeholder speedometer
         pygame.display.flip()
+        
+
+    def spawn_npc(self):
+        image = self.assets.get_image("babyblue_car")
+        driving_direction = random.choice(["down", "up"])
+        if driving_direction == "down":
+            npc_speed = 100 #random.randint(80, 300) #to be modified later
+        elif driving_direction == "up":
+            npc_speed = -100
+        
+        player_speed = self.playerspeed
+        apparent_speed = npc_speed - player_speed
+
+        if apparent_speed < 0:
+            y = self.height + 120
+            spawn_row = self.tiles[-1]
+        else:
+            y = -120
+            spawn_row = self.tiles[0]
+        
+        print("spawn_row", spawn_row)
+        lane_width = (len(spawn_row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X)
+        x_start = X_CENTRE - lane_width / 2
+        spawn_pos = [x_start + i * (TILE_SIZE_X + LINE_SIZE_X) / 2 for i, tile in enumerate(spawn_row) if tile == "."]
+        lane = random.choice(spawn_pos)
+        npc = Npc(self, image, lane, y, npc_speed) 
+        self.npcs.add(npc)
+        self.all_sprites.add(npc)
 
     def scenery_generator(self, type=None):
         """Carey this is for you, I want this function to generate random scenery"""

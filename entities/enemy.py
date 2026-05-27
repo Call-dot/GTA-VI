@@ -1,4 +1,3 @@
-from entities.enemy import Enemy
 import pygame
 from settings import *
 
