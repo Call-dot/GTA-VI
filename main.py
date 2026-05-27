@@ -38,7 +38,7 @@ class Game:
         random.seed(SEED)
         print(SEED)
 
-        self.car_options = ["red_car", "pink_car", "camo_car", "babyblue_car"]
+        self.car_options = ["red_car", "pink_car", "camo_car", "babyblue_car",]
         self.player_img = None
 
         # Run AssetLoader and save it in self.assets
@@ -46,7 +46,6 @@ class Game:
         self.assets.load_images()
         self.assets.load_music()
 
-        self.player_img = self.assets.get_image("red_car")
         pygame.mixer.music.load(
             self.assets.get_music("theme")
         )

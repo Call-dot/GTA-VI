@@ -101,6 +101,14 @@ class AssetLoader:
             image_dir / "babyblue_car.png"
         ).convert_alpha()
 
+        self.images["black_car"] = pygame.image.load(
+            image_dir / "black_car.png"
+        ).convert_alpha()
+
+        self.images["lime_car"] = pygame.image.load(
+            image_dir / "lime_car.png"
+        ).convert_alpha()
+
         self.images["camo_car"] = pygame.image.load(
             image_dir / "camo_car.png"
         ).convert_alpha()
