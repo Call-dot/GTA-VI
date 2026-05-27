@@ -43,7 +43,7 @@ class Game:
         random.seed(SEED)
         print(SEED)
 
-        self.car_options = ["red_car", "pink_car", "camo_car", "babyblue_car",]
+        self.car_options = ["red_car", "pink_car", "camo_car", "babyblue_car","black_car", "darkblue_car", "lime_car", "orange_car", "name_car"]
         self.player_img = None
 
         # Run AssetLoader and save it in self.assets
@@ -94,7 +94,7 @@ class Game:
             self.corner_test = True
 
     def run(self):
-        self.vlc("menu")
+        #self.vlc("menu")
         self.select_car_menu()
         self.vlc("theme")
         while self.running:
@@ -110,31 +110,46 @@ class Game:
                 print(len(self.tiles))
 
     def select_car_menu(self):
-        """Displays a car selection menu before starting the game."""
+        """Displays a car selection menu featuring a 2-row grid configuration."""
         selecting = True
         font = pygame.font.SysFont("Arial", 40, bold=True)
         
-        # Define layout parameters for the selection cards
-        card_w, card_h = 200, 200
-        spacing = 40
-        start_x = X_CENTRE - ((card_w * 4 + spacing * 3) / 2)
-        y_pos = Y_CENTRE - 50
+        # Define 2D layout constraints
+        card_w, card_h = 160, 160  # Scaled down slightly to comfortably fit 5 columns
+        spacing_x, spacing_y = 30, 40
+        
+        # Row 1 configuration (Indices 0 to 4)
+        row1_count = 5
+        row1_start_x = X_CENTRE - ((card_w * row1_count + spacing_x * (row1_count - 1)) / 2)
+        row1_y = Y_CENTRE - card_h - (spacing_y / 2)
 
-        # Construct collision bounding rects for each choice
+        # Row 2 configuration (Indices 5 to 8)
+        row2_count = 4
+        row2_start_x = X_CENTRE - ((card_w * row2_count + spacing_x * (row2_count - 1)) / 2)
+        row2_y = Y_CENTRE + (spacing_y / 2)
+
+        # Build structural mapping for interactive elements
         rects = []
-        for i in range(4):
-            x = start_x + i * (card_w + spacing)
-            rects.append(pygame.Rect(x, y_pos, card_w, card_h))
+        for idx in range(len(self.car_options)):
+            if idx < 5:
+                # Top Row assignment
+                x = row1_start_x + idx * (card_w + spacing_x)
+                y = row1_y
+            else:
+                # Bottom Row assignment
+                x = row2_start_x + (idx - 5) * (card_w + spacing_x)
+                y = row2_y
+            rects.append(pygame.Rect(x, y, card_w, card_h))
 
         while selecting:
             self.screen.fill((40, 40, 45))
             
-            # Title text rendering
+            # Draw Title Header
             title_surf = font.render("CHOOSE YOUR VEHICLE", True, (255, 255, 255))
-            title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 4))
+            title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 1.5))
             self.screen.blit(title_surf, title_rect)
 
-            # Event loop monitoring selection input
+            # Handle UI events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -143,27 +158,26 @@ class Game:
                 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
-                    # Evaluate if choice regions intersect click coordinates
                     for idx, rect in enumerate(rects):
                         if rect.collidepoint(mouse_pos):
                             chosen_key = self.car_options[idx]
                             self.player_img = self.assets.get_image(chosen_key)
-                            selecting = False # Exit selection loop, initializing run sequence
+                            selecting = False
             
-            # Rendering cards and visual feedback
+            # Draw UI grid cells and display preview textures
             mouse_pos = pygame.mouse.get_pos()
             for idx, rect in enumerate(rects):
-                # Hover detection styling
                 if rect.collidepoint(mouse_pos):
                     color = (0, 200, 100)
-                    border = 6
+                    border = 5
                 else:
-                    color = (200, 200, 200)
+                    color = (180, 180, 180)
                     border = 2
                 
-                pygame.draw.rect(self.screen, color, rect, border, border_radius=10)
+                # Render Selection Enclosure
+                pygame.draw.rect(self.screen, color, rect, border, border_radius=12)
                 
-                # Fetch corresponding asset and render centralized inside card UI
+                # Center and draw car graphics inside bounding box
                 car_surface = self.assets.get_image(self.car_options[idx])
                 car_rect = car_surface.get_rect(center=rect.center)
                 self.screen.blit(car_surface, car_rect)
