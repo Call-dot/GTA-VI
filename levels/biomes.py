@@ -17,7 +17,7 @@ BIOMES = {
         "road_weathering": 0.5
     },
 
-    "winter": {
+    "grassland": {
         "tree_density": 0.4,
         "background_images": [],
         "particle_effect": "snow",

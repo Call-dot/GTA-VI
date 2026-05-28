@@ -105,10 +105,31 @@ class AssetLoader:
             image_dir / "camo_car.png"
         ).convert_alpha()
 
+        self.images["darkblue_car"] = pygame.image.load(
+            image_dir / "darkblue_car.png"
+        ).convert_alpha()
+
+        self.images["name_car"] = pygame.image.load(
+            image_dir / "name_car.png"
+        ).convert_alpha()
+
+        self.images["orange_car"] = pygame.image.load(
+            image_dir / "orange_car.png"
+        ).convert_alpha()
+
+        self.images["black_car"] = pygame.image.load(
+            image_dir / "black_car.png"
+        ).convert_alpha()
+
+        self.images["lime_car"] = pygame.image.load(
+            image_dir / "lime_car.png"
+        ).convert_alpha()
+
     def load_music(self):
         music_dir = Path("assets/music")
 
         self.music["theme"] = music_dir / "GTA6_theme_song.mp3"
+        self.music["menu"] = music_dir / "menumusic.mp3"
 
     def get_image(self, name):
         return self.images[name]
