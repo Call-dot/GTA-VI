@@ -4,7 +4,7 @@ BIOMES = {
         "background_images": [grass_mud.png]
             "tree1",
             "tree2",
-            "tree3"
+            "tree3",
         ],
         "particle_effect": None,
         "road_weathering": 0.2
