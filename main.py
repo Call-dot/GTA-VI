@@ -2,7 +2,7 @@ import pygame
 import random
 from settings import *
 from systems.asset_loader import AssetLoader
-from entities.tiler import Tiler
+from levels.traffic import Tiler
 from levels.biomes import BIOMES
 from entities.npc import Npc
 
@@ -41,9 +41,10 @@ class Game:
         self.all_sprites = pygame.sprite.Group()
         self.npcs = pygame.sprite.Group()
         random.seed(SEED)
+        self.tiler = Tiler(SEED)
         print(SEED)
 
-        self.car_options = ["red_car", "pink_car", "camo_car", "babyblue_car","black_car", "darkblue_car", "lime_car", "orange_car", "name_car"]
+        self.car_options = ["red_car", "pink_car", "camo_car", "babyblue_car", "black_car", "darkblue_car", "lime_car", "orange_car", "name_car"]
         self.player_img = None
 
         # Run AssetLoader and save it in self.assets
@@ -75,6 +76,7 @@ class Game:
         # Utils
         self.t = 0
         self.tiles = []
+        self.tile_data = []
         self.weathering = []
         self.trees = []
         self.rocks = []
@@ -395,7 +397,9 @@ class Game:
 
             self.playerpos += 1
 
-            self.tiles.append(self.bg_generator())
+            row = self.tiler.next_row()
+            self.tiles.append(row["layout"])
+            self.tile_data.append(row)
             self.weathering.append(
                 self.bg_generator("weathering")
             )
@@ -408,7 +412,10 @@ class Game:
     def bg_tiler_init(self):
         rows_needed = HEIGHT // TILE_SIZE_Y + 5
         for _ in range(rows_needed):
-            self.tiles.append("__.|.|.|.__")
+            row = self.tiler.next_row()
+
+            self.tiles.append(row["layout"])
+            self.tile_data.append(row)
             self.weathering.append(self.bg_generator("weathering"))
         if DEBUG:
             print(self.weathering)

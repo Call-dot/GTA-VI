@@ -42,7 +42,7 @@ class Enemy(pygame.sprite.Sprite):
         )
 
         #Delete enemy off screen
-        if self.y > HEIGHT + 200:
+        if self.y > self.game.height + 200:
             self.kill()
 
     def chase_player(self, dt):
