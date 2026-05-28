@@ -84,7 +84,7 @@ class Game:
         self.x_offset = 0
         self.ts_down = 0
         self.bg_tiler_init()
-        self.current_biome = BIOMES["forest"]
+        self.current_biome = BIOMES["badlands"]
 
         if DEBUG or not(DEBUG):
             self.corner_test = True

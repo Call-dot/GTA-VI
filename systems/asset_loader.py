@@ -125,6 +125,14 @@ class AssetLoader:
             image_dir / "lime_car.png"
         ).convert_alpha()
 
+        self.images["snow"] = pygame.image.load(
+            image_dir / "snow.png"
+        ).convert_alpha()
+
+        self.images["grass"] = pygame.image.load(
+            image_dir / "grass.png"
+        ).convert_alpha()
+
     def load_music(self):
         music_dir = Path("assets/music")
 
