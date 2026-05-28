@@ -51,14 +51,6 @@ class Game:
         self.assets.load_images()
         self.assets.load_music()
 
-
-    #pygame.mixer.music.load(
-        #self.assets.get_music("theme")
-    #)
-    #pygame.mixer.music.play(-1)
-
-   
-
         # This variable controls whether the player is currently trying to accelerate
         # Is directly updated by player
         # Accelerating = 1
@@ -73,6 +65,8 @@ class Game:
         # left = 1
         # right = 2
         self.playerdir = 0
+        # How many rows of tiles the player has passed through
+        self.playerpos = 0
 
         self.player_x = X_CENTRE
         self.player_y = HEIGHT - 420
@@ -94,7 +88,7 @@ class Game:
             self.corner_test = True
 
     def run(self):
-        #self.vlc("menu")
+        self.vlc("menu")
         self.select_car_menu()
         self.vlc("theme")
         while self.running:
@@ -108,6 +102,8 @@ class Game:
             self.draw()
             if DEBUG:
                 print(len(self.tiles))
+        print(self.tiles)
+
 
     def select_car_menu(self):
         """Displays a car selection menu featuring a 2-row grid configuration."""
@@ -369,9 +365,9 @@ class Game:
             # L = white line
             # Y = yellow line
             # _ = placeholder
-            if self.t < 10:
+            if self.playerpos < 10:
                 return "__S|.|.|S__"
-            elif self.t < 20:
+            elif self.playerpos < 20:
                 return "SC./.|./.CS"
             elif self.corner_test:
                 self.corner_test = False
@@ -381,14 +377,21 @@ class Game:
 
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
-        self.scroll_offset += self.playerspeed * self.dt
+        self.scroll_offset -= self.playerspeed * self.dt
+        while self.scroll_offset < 0:
+            self.scroll_offset += TILE_SIZE_Y
+
+            self.playerpos += 1
+
+            self.tiles.append(self.bg_generator())
+            self.weathering.append(
+                self.bg_generator("weathering")
+            )
 
         while self.scroll_offset >= TILE_SIZE_Y:
             self.scroll_offset -= TILE_SIZE_Y
-            self.tiles.pop()
-            self.tiles.insert(0, self.bg_generator())
-            self.weathering.pop()
-            self.weathering.insert(0, self.bg_generator("weathering"))
+
+            self.playerpos = max(0, self.playerpos - 1)
 
     def bg_tiler_init(self):
         rows_needed = HEIGHT // TILE_SIZE_Y + 5
@@ -400,8 +403,21 @@ class Game:
 
     def bg_blitter(self):
         """Renders the text from bg_tiler into road images"""
-        for row_index, row in enumerate(self.tiles):
-            y = HEIGHT - ((row_index - 1) * TILE_SIZE_Y + self.scroll_offset)
+        rows_visible = HEIGHT // TILE_SIZE_Y + 3
+        start_row = max(0, self.playerpos - rows_visible)
+        end_row = self.playerpos + rows_visible
+        print("rows_visible", rows_visible)
+        print("start_row", rows_visible)
+        print("end_row", rows_visible)
+
+        
+        for row_index in range(start_row, end_row):
+            row = self.tiles[row_index]
+            # print("row", row)
+            distance_from_player = row_index - self.playerpos
+            # print("distance from player", distance_from_player)
+            y = row_index * TILE_SIZE_Y - self.playerpos * TILE_SIZE_Y + self.scroll_offset
+            # print("Y", y)
             road_width = (len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X)
             x_start = X_CENTRE - road_width / 2
             #half_road_width = (len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X) + LINE_SIZE_X * 2
