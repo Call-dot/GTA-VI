@@ -26,8 +26,9 @@ TILE_SIZE_Y = 90
 TILE_SIZE_X = 110
 LINE_SIZE_Y = 90
 LINE_SIZE_X = 10
+ROAD_SIZE_X = (TILE_SIZE_X + LINE_SIZE_X) / 2
 NUM_WEATHERING_PATTERNS = 8
-DRIVING_SIDE = "right"
+NOT_BRITISH_DRIVING = False
 TRAFFIC = 0.02
 
 class Game:
@@ -41,8 +42,12 @@ class Game:
         self.all_sprites = pygame.sprite.Group()
         self.npcs = pygame.sprite.Group()
         random.seed(SEED)
-        self.tiler = Tiler(SEED)
+        self.tiler = Tiler(
+            seed=SEED,
+            driving_side="right" if NOT_BRITISH_DRIVING else "left"
+        )
         print(SEED)
+        self.not_british_driving = NOT_BRITISH_DRIVING
 
         self.car_options = ["red_car", "pink_car", "camo_car", "babyblue_car", "black_car", "darkblue_car", "lime_car", "orange_car", "name_car"]
         self.player_img = None
@@ -266,9 +271,7 @@ class Game:
                 target_v = self.player_vx
 
        
-        self.player_vx += (
-            target_v - self.player_vx
-        ) * HANDLING * self.dt 
+        self.player_vx += (target_v - self.player_vx) * HANDLING * self.dt 
         self.player_vx *= (self.playerspeed / MAX_SPEED)
 
         
@@ -294,10 +297,7 @@ class Game:
         self.all_sprites.draw(self.screen)  
 
         angle = self.player_vx * 0.05
-        player_rotated = pygame.transform.rotate(
-            self.player_img,
-            angle + 180
-        )
+        player_rotated = pygame.transform.rotate(self.player_img, angle + 180)
         rect = player_rotated.get_rect(
             center=(self.player_x, self.player_y)
         )
@@ -317,7 +317,7 @@ class Game:
         pygame.display.flip()
         
 
-    def spawn_npc(self):
+    def spawn_npc(self): #npc = non player car
         image = self.assets.get_image("babyblue_car")
         driving_direction = random.choice(["down", "up"])
         if driving_direction == "down":
@@ -331,15 +331,27 @@ class Game:
         if apparent_speed < 0:
             y = self.height + 120
             spawn_row = self.tiles[-1]
+            spawn_data = self.tile_data[-1]
         else:
             y = -120
-            spawn_row = self.tiles[0]
+            spawn_row = self.tiles[self.playerpos]
+            spawn_data = self.tile_data[self.playerpos]
         
-        print("spawn_row", spawn_row)
-        lane_width = (len(spawn_row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X)
+        lane_width = (len(spawn_row) - 1) * ROAD_SIZE_X
         x_start = X_CENTRE - lane_width / 2
-        spawn_pos = [x_start + i * (TILE_SIZE_X + LINE_SIZE_X) / 2 for i, tile in enumerate(spawn_row) if tile == "."]
-        lane = random.choice(spawn_pos)
+        
+        valid_lanes = []
+        desired_dir = driving_direction
+        for lane_index, lane_data in spawn_data["lanes"].items():
+            
+            if lane_data["dir"] == desired_dir or lane_data["dir"] == "both":
+                x = self.lane_to_x(x_start, lane_index)
+                valid_lanes.append(x)
+        
+        if not valid_lanes:
+            return
+        lane = random.choice(valid_lanes)
+
         npc = Npc(self, image, lane, y, npc_speed) 
         self.npcs.add(npc)
         self.all_sprites.add(npc)
@@ -425,10 +437,6 @@ class Game:
         rows_visible = HEIGHT // TILE_SIZE_Y + 3
         start_row = max(0, self.playerpos - rows_visible)
         end_row = self.playerpos + rows_visible
-        print("rows_visible", rows_visible)
-        print("start_row", rows_visible)
-        print("end_row", rows_visible)
-
         
         for row_index in range(start_row, end_row):
             row = self.tiles[row_index]
@@ -455,10 +463,16 @@ class Game:
                 elif char == "-":
                     img = self.assets.get_image("no_road_line")
 
-                elif char == "/":
+                elif char == ":":
                     img = self.assets.get_image("white_dashed_road_line")
 
+                elif char == ";":
+                    img = self.assets.get_image("yellow_dashed_road_line")
+
                 elif char == "|":
+                    img = self.assets.get_image("white_solid_road_line")
+
+                elif char == "/":
                     img = self.assets.get_image("yellow_solid_road_line")
                 
                 elif char == "<":
@@ -479,12 +493,11 @@ class Game:
                 elif char == "4":
                     img = self.assets.get_image("DR_concrete_corner")
 
-
                 else:
                     continue
                 
                 img_rect = img.get_rect()
-                img_rect.center = (x_start + (TILE_SIZE_X + LINE_SIZE_X) / 2 * col_index, y)
+                img_rect.center = (x_start + ROAD_SIZE_X * col_index, y)
 
                 self.screen.blit(img, img_rect)
                 if char == ".":
@@ -497,6 +510,9 @@ class Game:
             self.assets.get_music(music)
         )
         pygame.mixer.music.play(-1)
+    
+    def lane_to_x(self, x_start, lane_index):
+        return x_start + lane_index * ROAD_SIZE_X
 
     def debugger(self, msg):
         print("\n", msg)

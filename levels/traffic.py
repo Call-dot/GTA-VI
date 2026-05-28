@@ -1,11 +1,12 @@
 import random
 from levels.roads import ROAD_TYPES
 
-
 class Tiler:
-    def __init__(self, seed=None):
-        self.random = random.Random(seed)
+    def __init__(self, seed=None, driving_side="right"):
 
+        self.random = random.Random(seed)
+        self.driving_side = driving_side
+        print(self.driving_side) #debug
         self.current_road = None
         self.rows_remaining = 0
 
@@ -38,8 +39,25 @@ class Tiler:
 
         self.rows_remaining -= 1
 
+        # British driving
+        resolved_lanes = {}
+        for lane_index, lane_data in self.current_road["lanes"].items():
+            lane_copy = lane_data.copy()
+
+            if lane_copy["dir"] == "down":
+                lane_copy["dir"] = (
+                    "down" if self.driving_side == "right" else "up"
+                )
+
+            elif lane_copy["dir"] == "up":
+                lane_copy["dir"] = (
+                    "up" if self.driving_side == "right" else "down"
+                )
+
+            resolved_lanes[lane_index] = lane_copy
+
         return {
             "layout": self.current_road["layout"],
-            "lanes": self.current_road["lanes"],
+            "lanes": resolved_lanes,
             "road_type": self.current_road,
         }
