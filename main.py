@@ -106,44 +106,56 @@ class Game:
 
 
     def select_car_menu(self):
-        """Displays a car selection menu featuring a 2-row grid configuration."""
+    
         selecting = True
         font = pygame.font.SysFont("Arial", 40, bold=True)
         
-        # Define 2D layout constraints
-        card_w, card_h = 160, 160  # Scaled down slightly to comfortably fit 5 columns
+       
+        card_w, card_h = 160, 160  
         spacing_x, spacing_y = 30, 40
         
-        # Row 1 configuration (Indices 0 to 4)
+       
         row1_count = 5
         row1_start_x = X_CENTRE - ((card_w * row1_count + spacing_x * (row1_count - 1)) / 2)
         row1_y = Y_CENTRE - card_h - (spacing_y / 2)
 
-        # Row 2 configuration (Indices 5 to 8)
+     
         row2_count = 4
         row2_start_x = X_CENTRE - ((card_w * row2_count + spacing_x * (row2_count - 1)) / 2)
         row2_y = Y_CENTRE + (spacing_y / 2)
 
-        # Build structural mapping for interactive elements
+    
         rects = []
         for idx in range(len(self.car_options)):
             if idx < 5:
-                # Top Row assignment
+                
                 x = row1_start_x + idx * (card_w + spacing_x)
                 y = row1_y
             else:
-                # Bottom Row assignment
+                
                 x = row2_start_x + (idx - 5) * (card_w + spacing_x)
                 y = row2_y
             rects.append(pygame.Rect(x, y, card_w, card_h))
 
         while selecting:
-            self.screen.fill((40, 40, 45))
+            self.screen.fill("#555554")
             
-            # Draw Title Header
-            title_surf = font.render("CHOOSE YOUR VEHICLE", True, (255, 255, 255))
+            welcome_font = pygame.font.SysFont("Arial", 70, bold=True) 
+            welcome_surf = welcome_font.render("WELCOME TO GTA 6", True, (255, 215, 0)) 
+            welcome_rect = welcome_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 0.8))
+            self.screen.blit(welcome_surf, welcome_rect)
+            
+            title_surf = font.render("PLEASE CHOOSE YOUR VEHICLE", True, (255, 255, 255))
             title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 1.5))
             self.screen.blit(title_surf, title_rect)
+
+            footer_font = pygame.font.SysFont("Arial", 16, bold=False)
+            footer_surf1 = footer_font.render("v1.0.0 Alpha", True, (120, 120, 125)) 
+            footer_rect1 = footer_surf1.get_rect(bottomright=(WIDTH - 20, HEIGHT - 20))
+            footer_surf2 = footer_font.render("Developed by Aiden, Tristan, and Carey", True, (120, 120, 125))
+            footer_rect2 = footer_surf2.get_rect(bottomright=footer_rect1.topright)
+            self.screen.blit(footer_surf1, footer_rect1)
+            self.screen.blit(footer_surf2, footer_rect2)
 
             # Handle UI events
             for event in pygame.event.get():
@@ -160,7 +172,7 @@ class Game:
                             self.player_img = self.assets.get_image(chosen_key)
                             selecting = False
             
-            # Draw UI grid cells and display preview textures
+            
             mouse_pos = pygame.mouse.get_pos()
             for idx, rect in enumerate(rects):
                 if rect.collidepoint(mouse_pos):
@@ -170,10 +182,10 @@ class Game:
                     color = (180, 180, 180)
                     border = 2
                 
-                # Render Selection Enclosure
+                
                 pygame.draw.rect(self.screen, color, rect, border, border_radius=12)
                 
-                # Center and draw car graphics inside bounding box
+                
                 car_surface = self.assets.get_image(self.car_options[idx])
                 car_rect = car_surface.get_rect(center=rect.center)
                 self.screen.blit(car_surface, car_rect)
@@ -196,7 +208,7 @@ class Game:
     def playerinput(self, dt):
         keys = pygame.key.get_pressed()
         
-        # Fast/slow
+        
         if keys[pygame.K_DOWN]:
             self.playermode = 1
             self.accelerate()
@@ -209,7 +221,7 @@ class Game:
             self.playermode = 0
             self.decelerate(FRICTION)
 
-        # Steering
+    
         if keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
             self.playerdir = 1
             if DEBUG:
@@ -238,7 +250,7 @@ class Game:
         self.playerspeed += deceleration * self.dt
     
     def player(self):
-        # Desired sideways velocity
+        
         if self.playerdir == 1:
             target_v = -MAX_TURN_SPEED
 
@@ -251,15 +263,15 @@ class Game:
             else:
                 target_v = self.player_vx
 
-        # Smoothly approach target velocity
+       
         self.player_vx += (
             target_v - self.player_vx
         ) * HANDLING * self.dt 
         self.player_vx *= (self.playerspeed / MAX_SPEED)
 
-        # Move car
+        
         self.player_x += self.player_vx * self.dt
-        #Boundaries
+        
         if self.player_x > WIDTH+50:
             self.player_x = -40
         
