@@ -112,27 +112,22 @@ class Game:
                 print(len(self.tiles))
         print(self.tiles)
 
-
     def select_car_menu(self):
     
         selecting = True
         font = pygame.font.SysFont("Arial", 40, bold=True)
-        
        
         card_w, card_h = 160, 160  
         spacing_x, spacing_y = 30, 40
-        
        
         row1_count = 5
         row1_start_x = X_CENTRE - ((card_w * row1_count + spacing_x * (row1_count - 1)) / 2)
         row1_y = Y_CENTRE - card_h - (spacing_y / 2)
-
      
         row2_count = 4
         row2_start_x = X_CENTRE - ((card_w * row2_count + spacing_x * (row2_count - 1)) / 2)
         row2_y = Y_CENTRE + (spacing_y / 2)
 
-    
         rects = []
         for idx in range(len(self.car_options)):
             if idx < 5:
