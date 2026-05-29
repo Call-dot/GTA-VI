@@ -131,11 +131,9 @@ class Game:
         rects = []
         for idx in range(len(self.car_options)):
             if idx < 5:
-                
                 x = row1_start_x + idx * (card_w + spacing_x)
                 y = row1_y
             else:
-                
                 x = row2_start_x + (idx - 5) * (card_w + spacing_x)
                 y = row2_y
             rects.append(pygame.Rect(x, y, card_w, card_h))
