@@ -113,13 +113,12 @@ class Game:
         print(self.tiles)
 
     def select_car_menu(self):
-    
         selecting = True
         font = pygame.font.SysFont("Arial", 40, bold=True)
-       
+        
         card_w, card_h = 160, 160  
         spacing_x, spacing_y = 30, 40
-       
+        
         row1_count = 5
         row1_start_x = X_CENTRE - ((card_w * row1_count + spacing_x * (row1_count - 1)) / 2)
         row1_y = Y_CENTRE - card_h - (spacing_y / 2)
@@ -137,6 +136,10 @@ class Game:
                 x = row2_start_x + (idx - 5) * (card_w + spacing_x)
                 y = row2_y
             rects.append(pygame.Rect(x, y, card_w, card_h))
+
+        exit_btn_w, exit_btn_h = 160, 50
+        exit_btn_rect = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
+        exit_font = pygame.font.SysFont("Arial", 24, bold=True)
 
         while selecting:
             self.screen.fill("#555554")
@@ -158,7 +161,8 @@ class Game:
             self.screen.blit(footer_surf1, footer_rect1)
             self.screen.blit(footer_surf2, footer_rect2)
 
-            # Handle UI events
+            mouse_pos = pygame.mouse.get_pos()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -166,14 +170,18 @@ class Game:
                     sys.exit()
                 
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_pos = event.pos
+                    click_pos = event.pos
                     for idx, rect in enumerate(rects):
-                        if rect.collidepoint(mouse_pos):
+                        if rect.collidepoint(click_pos):
                             chosen_key = self.car_options[idx]
                             self.player_img = self.assets.get_image(chosen_key)
                             selecting = False
+                    
+                    if exit_btn_rect.collidepoint(click_pos):
+                        pygame.quit()
+                        import sys
+                        sys.exit()
             
-            mouse_pos = pygame.mouse.get_pos()
             for idx, rect in enumerate(rects):
                 if rect.collidepoint(mouse_pos):
                     color = (0, 200, 100)
@@ -187,6 +195,19 @@ class Game:
                 car_surface = self.assets.get_image(self.car_options[idx])
                 car_rect = car_surface.get_rect(center=rect.center)
                 self.screen.blit(car_surface, car_rect)
+
+            if exit_btn_rect.collidepoint(mouse_pos):
+                exit_bg_color = (130, 20, 20)
+                exit_border_width = 0
+            else:
+                exit_bg_color = (200, 50, 50)
+                exit_border_width = 2
+                
+            pygame.draw.rect(self.screen, exit_bg_color, exit_btn_rect, exit_border_width, border_radius=6)
+            
+            exit_text_surf = exit_font.render("EXIT GAME", True, (255, 255, 255))
+            exit_text_rect = exit_text_surf.get_rect(center=exit_btn_rect.center)
+            self.screen.blit(exit_text_surf, exit_text_rect)
 
             pygame.display.flip()
             self.clock.tick(30)
