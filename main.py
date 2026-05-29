@@ -4,6 +4,7 @@ from settings import *
 from systems.asset_loader import AssetLoader
 from levels.traffic import Tiler
 from levels.biomes import BIOMES
+from levels.roads import ROAD_TYPES
 from entities.npc import Npc
 
 NAME = "GTA6"
@@ -179,7 +180,6 @@ class Game:
                             self.player_img = self.assets.get_image(chosen_key)
                             selecting = False
             
-            
             mouse_pos = pygame.mouse.get_pos()
             for idx, rect in enumerate(rects):
                 if rect.collidepoint(mouse_pos):
@@ -189,9 +189,7 @@ class Game:
                     color = (180, 180, 180)
                     border = 2
                 
-                
                 pygame.draw.rect(self.screen, color, rect, border, border_radius=12)
-                
                 
                 car_surface = self.assets.get_image(self.car_options[idx])
                 car_rect = car_surface.get_rect(center=rect.center)
@@ -215,7 +213,6 @@ class Game:
     def playerinput(self, dt):
         keys = pygame.key.get_pressed()
         
-        
         if keys[pygame.K_DOWN]:
             self.playermode = 1
             self.accelerate()
@@ -227,7 +224,6 @@ class Game:
         else:
             self.playermode = 0
             self.decelerate(FRICTION)
-
     
         if keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
             self.playerdir = 1
@@ -287,7 +283,9 @@ class Game:
         pass
 
     def update(self):
-        if random.random() < TRAFFIC:
+        current_road = self.tile_data[self.playerpos]
+        traffic_density = current_road["road_type"]["traffic"]
+        if random.random() < traffic_density * self.dt * (self.playerspeed / MAX_SPEED + 0.5):
             self.spawn_npc()
         self.all_sprites.update(self.dt)
 
@@ -330,8 +328,8 @@ class Game:
 
         if apparent_speed < 0:
             y = self.height + 120
-            spawn_row = self.tiles[-1]
-            spawn_data = self.tile_data[-1]
+            spawn_row = self.tiles[self.playerpos]
+            spawn_data = self.tile_data[self.playerpos]
         else:
             y = -120
             spawn_row = self.tiles[self.playerpos]

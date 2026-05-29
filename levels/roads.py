@@ -35,7 +35,7 @@ ROAD_TYPES = {
         "traffic": 1.0,
         "weight": 10,
         "min_length": 20,
-        "max_length": 60,
+        "max_length": 50,
     },
 
     "small_town": {
@@ -149,7 +149,7 @@ ROAD_TYPES = {
             },
         },
 
-        "traffic": 1.0,
+        "traffic": 3.0,
         "weight": 10,
         "min_length": 20,
         "max_length": 60,
