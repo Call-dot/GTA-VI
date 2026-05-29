@@ -22,6 +22,7 @@ REVERSE_SPEED = -69
 HANDLING = 5              # larger = snappier
 AUTO_LANE_ALIGN = True
 DEBUG = False
+HITBOX = True
 
 TILE_SIZE_Y = 90
 TILE_SIZE_X = 110
@@ -230,8 +231,6 @@ class Game:
         if keys[pygame.K_DOWN]:
             self.playermode = 1
             self.accelerate()
-            if DEBUG:
-                self.debugger("FORWARD!")
         elif keys[pygame.K_UP]:
             self.playermode = 2
             self.reverse(BRAKE_POWER)
@@ -241,12 +240,8 @@ class Game:
     
         if keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
             self.playerdir = 1
-            if DEBUG:
-                self.debugger("LEFT!")
         elif keys[pygame.K_RIGHT] and not keys[pygame.K_LEFT]:
             self.playerdir = 2
-            if DEBUG:
-                self.debugger("RIGHT!")
         else:
             self.playerdir = 0
 
@@ -256,18 +251,13 @@ class Game:
         
     def decelerate(self, friction):
         deceleration = (0 - self.playerspeed) * friction
-        if DEBUG:
-            print(self.playerspeed, "+=", deceleration, "*", self.dt)
         self.playerspeed += deceleration * self.dt
 
     def reverse(self, friction):
         deceleration = (REVERSE_SPEED - self.playerspeed) * friction
-        if DEBUG:
-            print(self.playerspeed, "+=", deceleration, "*", self.dt)
         self.playerspeed += deceleration * self.dt
     
     def player(self):
-        
         if self.playerdir == 1:
             target_v = -MAX_TURN_SPEED
 
@@ -282,12 +272,10 @@ class Game:
        
         self.player_vx += (target_v - self.player_vx) * HANDLING * self.dt 
         self.player_vx *= (self.playerspeed / MAX_SPEED)
-        
         self.player_x += self.player_vx * self.dt
         
         if self.player_x > WIDTH+50:
             self.player_x = -40
-        
         elif self.player_x < -50:
             self.player_x = WIDTH+40
 
@@ -300,6 +288,7 @@ class Game:
         if random.random() < traffic_density * self.dt * (self.playerspeed / MAX_SPEED + 0.5):
             self.spawn_npc()
         self.all_sprites.update(self.dt)
+        self.collisions()
 
     def draw(self):
         self.screen.fill((100, 100, 100))
@@ -311,6 +300,7 @@ class Game:
         rect = player_rotated.get_rect(
             center=(self.player_x, self.player_y)
         )
+        self.player_rect = rect
         self.screen.blit(player_rotated, rect)    
 
         half_width = rect.width / 2
@@ -324,8 +314,17 @@ class Game:
             #self.screen.blit(player_rotated, ghost_rect)
 
         pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169)) # placeholder speedometer
-        pygame.display.flip()
+        if HITBOX:
+            for npc in self.npcs:
+                pygame.draw.line(
+                    self.screen,
+                    "red",
+                    npc.rect.center,
+                    (npc.rect.centerx, npc.rect.centery),
+                    1
+                )
         
+        pygame.display.flip()
 
     def spawn_npc(self): #npc = non player car
         image = self.assets.get_image("babyblue_car")
@@ -355,16 +354,53 @@ class Game:
         for lane_index, lane_data in spawn_data["lanes"].items():
             
             if lane_data["dir"] == desired_dir or lane_data["dir"] == "both":
-                x = self.lane_to_x(x_start, lane_index)
-                valid_lanes.append(x)
-        
+                lane_x = self.lane_to_x(
+                x_start,
+                lane_index
+            )
+
+                valid_lanes.append({
+                    "x": lane_x,
+                    "lane_index": lane_index,
+                    "direction": lane_data["dir"],
+                })
+
         if not valid_lanes:
             return
         lane = random.choice(valid_lanes)
 
-        npc = Npc(self, image, lane, y, npc_speed) 
+        npc = Npc(self, image, lane["x"], y, npc_speed, lane["lane_index"], lane["direction"]) 
         self.npcs.add(npc)
         self.all_sprites.add(npc)
+
+    def query_npcs(self, lane_index, direction=None):
+        npcs = []
+        for npc in self.npcs:
+            if npc.lane_index != lane_index:
+                continue
+
+            if (direction is not None and npc.dir != direction):
+                continue
+
+            npcs.append(npc)
+        return npcs
+
+    def collisions(self):
+        for npc in self.npcs:
+            if self.player_rect.colliderect(npc.rect):
+                print("CRASH")
+
+    def lane_clear(self, lane_index, y, min_distance=250):
+
+        for npc in self.npcs:
+
+            if npc.lane_index != lane_index:
+                continue
+
+            if abs(npc.world_y - y) < min_distance:
+                return False
+
+        return True
 
     def scenery_generator(self, type=None):
         """Carey this is for you, I want this function to generate random scenery"""
@@ -428,7 +464,6 @@ class Game:
 
         while self.scroll_offset >= TILE_SIZE_Y:
             self.scroll_offset -= TILE_SIZE_Y
-
             self.playerpos = max(0, self.playerpos - 1)
 
     def bg_tiler_init(self):
