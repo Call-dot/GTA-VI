@@ -258,11 +258,9 @@ class Game:
                 target_v = 0
             else:
                 target_v = self.player_vx
-
        
         self.player_vx += (target_v - self.player_vx) * HANDLING * self.dt 
         self.player_vx *= (self.playerspeed / MAX_SPEED)
-
         
         self.player_x += self.player_vx * self.dt
         
