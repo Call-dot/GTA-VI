@@ -315,6 +315,15 @@ class Game:
 
         pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169)) # placeholder speedometer
         if HITBOX:
+            lane = self.closest_lane()
+            font = pygame.font.SysFont(None, 36)
+            text = font.render(
+                f"Lane: {lane}",
+                True,
+                (255, 255, 255)
+            )
+
+            self.screen.blit(text, (20, 20))
             for npc in self.npcs:
                 pygame.draw.line(
                     self.screen,
@@ -354,10 +363,12 @@ class Game:
         for lane_index, lane_data in spawn_data["lanes"].items():
             
             if lane_data["dir"] == desired_dir or lane_data["dir"] == "both":
-                lane_x = self.lane_to_x(
-                x_start,
-                lane_index
-            )
+                lane_x = self.lane_to_x(x_start,lane_index)
+                
+                if not self.lane_clear(lane_index, y):
+                    continue
+                if not lane_x:
+                    continue
 
                 valid_lanes.append({
                     "x": lane_x,
@@ -391,16 +402,47 @@ class Game:
                 print("CRASH")
 
     def lane_clear(self, lane_index, y, min_distance=250):
-
         for npc in self.npcs:
-
             if npc.lane_index != lane_index:
                 continue
-
             if abs(npc.world_y - y) < min_distance:
                 return False
-
         return True
+    
+    def closest_lane(self):
+        current_row = self.tile_data[self.playerpos]
+        row = self.tiles[self.playerpos]
+
+        lane_width = ((len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X))
+        x_start = X_CENTRE - lane_width / 2
+
+        closest_lane = None
+        closest_distance = float("inf")
+
+        for lane_index in current_row["lanes"]:
+
+            lane_x = self.lane_to_x(
+                x_start,
+                lane_index
+            )
+
+            distance = abs(lane_x - self.player_x)
+
+            if distance < closest_distance:
+                closest_distance = distance
+                closest_lane = lane_index
+        return closest_lane
+    
+    def lane_offset(self):
+        lane = self.closest_lane()
+        current_row = self.tile_data[self.playerpos]
+        row = self.tiles[self.playerpos]
+
+        lane_width = ((len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X))
+        x_start = X_CENTRE - lane_width / 2
+
+        lane_x = self.lane_to_x(x_start, lane)
+        return self.player_x - lane_x
 
     def scenery_generator(self, type=None):
         """Carey this is for you, I want this function to generate random scenery"""
@@ -538,6 +580,18 @@ class Game:
                 elif char == "4":
                     img = self.assets.get_image("DR_concrete_corner")
 
+                elif char == "5":
+                    img = self.assets.get_image("UL_concrete_merge")
+                
+                elif char == "6":
+                    img = self.assets.get_image("UR_concrete_merge")
+                
+                elif char == "7":
+                    img = self.assets.get_image("DL_concrete_merge")
+                
+                elif char == "8":
+                    img = self.assets.get_image("DR_concrete_merge")
+                
                 else:
                     continue
                 
