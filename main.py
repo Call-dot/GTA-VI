@@ -141,6 +141,8 @@ class Game:
         exit_btn_w, exit_btn_h = 160, 50
         exit_btn_rect = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
         exit_font = pygame.font.SysFont("Arial", 24, bold=True)
+        
+        car_name_font = pygame.font.SysFont("Arial", 18, bold=True)
 
         while selecting:
             self.screen.fill("#555554")
@@ -194,8 +196,15 @@ class Game:
                 pygame.draw.rect(self.screen, color, rect, border, border_radius=12)
                 
                 car_surface = self.assets.get_image(self.car_options[idx])
-                car_rect = car_surface.get_rect(center=rect.center)
+                car_rect = car_surface.get_rect(center=(rect.centerx, rect.centery - 25))
                 self.screen.blit(car_surface, car_rect)
+                
+                raw_name = self.car_options[idx]
+                clean_name = raw_name.replace("_", " ").title()
+                
+                name_surf = car_name_font.render(clean_name, True, (255, 255, 255))
+                name_rect = name_surf.get_rect(center=(rect.centerx, rect.bottom - 20))
+                self.screen.blit(name_surf, name_rect)
 
             if exit_btn_rect.collidepoint(mouse_pos):
                 exit_bg_color = (130, 20, 20)
