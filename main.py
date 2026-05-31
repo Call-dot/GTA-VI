@@ -142,6 +142,10 @@ class Game:
         exit_btn_rect = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
         exit_font = pygame.font.SysFont("Arial", 24, bold=True)
         
+        stats_btn_w, stats_btn_h = 160, 50
+        stats_btn_rect = pygame.Rect(X_CENTRE - stats_btn_w / 2, HEIGHT - 20 - stats_btn_h, stats_btn_w, stats_btn_h)
+        stats_font = pygame.font.SysFont("Arial", 24, bold=True)
+        
         car_name_font = pygame.font.SysFont("Arial", 18, bold=True)
 
         while selecting:
@@ -184,6 +188,9 @@ class Game:
                         pygame.quit()
                         import sys
                         sys.exit()
+                        
+                    if stats_btn_rect.collidepoint(click_pos):
+                        self.stats_menu()
             
             for idx, rect in enumerate(rects):
                 if rect.collidepoint(mouse_pos):
@@ -218,6 +225,19 @@ class Game:
             exit_text_surf = exit_font.render("EXIT GAME", True, (255, 255, 255))
             exit_text_rect = exit_text_surf.get_rect(center=exit_btn_rect.center)
             self.screen.blit(exit_text_surf, exit_text_rect)
+
+            if stats_btn_rect.collidepoint(mouse_pos):
+                stats_bg_color = (20, 100, 130)
+                stats_border_width = 0
+            else:
+                stats_bg_color = (50, 150, 200)
+                stats_border_width = 2
+                
+            pygame.draw.rect(self.screen, stats_bg_color, stats_btn_rect, stats_border_width, border_radius=6)
+            
+            stats_text_surf = stats_font.render("STATS", True, (255, 255, 255))
+            stats_text_rect = stats_text_surf.get_rect(center=stats_btn_rect.center)
+            self.screen.blit(stats_text_surf, stats_text_rect)
 
             pygame.display.flip()
             self.clock.tick(30)
