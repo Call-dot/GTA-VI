@@ -13,15 +13,20 @@ BIOMES = {
 
     "winter": {
         "tree_density": 0.9,
-        "background_images": ["snow"],
+        "background_images": [
+            "snow.py",
+        ],
         "particle_effect": None,
         "road_weathering": 0.5
     },
 
     "grassland": {
         "tree_density": 0.4,
-        "background_images": ["grass"],
-        "particle_effect": "snow",
+        "background_images": [
+            "grass.py",
+            "grass1,py",
+        ],
+        "particle_effect": None,
         "road_weathering": 0.1
     }
 }
