@@ -1,10 +1,12 @@
 import pygame
+import random
 from pathlib import Path
 
 class AssetLoader:
     def __init__(self):
         self.images = {}
         self.music = {}
+        self.car_models = ["red_car", "pink_car", "babyblue_car", "camo_car", "darkblue_car", "name_car", "orange_car", "black_car", "lime_car"]
 
     def load_images(self):
         image_dir = Path("assets/images")
@@ -109,41 +111,13 @@ class AssetLoader:
             image_dir / "yellow_dashed_road_line.png"
         ).convert_alpha()
 
-        self.images["red_car"] = pygame.image.load(
-            image_dir / "red_car.png"
-        ).convert_alpha()
+        def load_car(model):
+            self.images[model] = pygame.image.load(
+                image_dir / f"{model}.png"
+            ).convert_alpha()
 
-        self.images["pink_car"] = pygame.image.load(
-            image_dir / "pink_car.png"
-        ).convert_alpha()
-
-        self.images["babyblue_car"] = pygame.image.load(
-            image_dir / "babyblue_car.png"
-        ).convert_alpha()
-
-        self.images["camo_car"] = pygame.image.load(
-            image_dir / "camo_car.png"
-        ).convert_alpha()
-
-        self.images["darkblue_car"] = pygame.image.load(
-            image_dir / "darkblue_car.png"
-        ).convert_alpha()
-
-        self.images["name_car"] = pygame.image.load(
-            image_dir / "name_car.png"
-        ).convert_alpha()
-
-        self.images["orange_car"] = pygame.image.load(
-            image_dir / "orange_car.png"
-        ).convert_alpha()
-
-        self.images["black_car"] = pygame.image.load(
-            image_dir / "black_car.png"
-        ).convert_alpha()
-
-        self.images["lime_car"] = pygame.image.load(
-            image_dir / "lime_car.png"
-        ).convert_alpha()
+        for car in self.car_models:
+            load_car(car)
 
         self.images["snow"] = pygame.image.load(
             image_dir / "snow.png"
@@ -172,3 +146,9 @@ class AssetLoader:
 
     def get_music(self, name):
         return self.music[name]
+
+    def get_random_car(self, player=None):
+        name = ""
+        while name == player or name == "":
+            name = random.choice(self.car_models)
+        return name, self.images[name]

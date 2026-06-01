@@ -14,6 +14,7 @@ X_CENTRE = WIDTH / 2
 Y_CENTRE = HEIGHT / 2
 SEED = random.randrange(2147483647)
 
+SPACE_ABOVE_PLAYER = 420
 BRAKE_POWER = 2
 FRICTION = 0.67 #px/s^2
 MAX_SPEED = 420
@@ -41,6 +42,7 @@ class Game:
         self.running = True
         self.width = WIDTH
         self.height = HEIGHT
+        self.space_above_player = SPACE_ABOVE_PLAYER
         self.all_sprites = pygame.sprite.Group()
         self.npcs = pygame.sprite.Group()
         random.seed(SEED)
@@ -51,13 +53,14 @@ class Game:
         print(SEED)
         self.not_british_driving = NOT_BRITISH_DRIVING
 
-        self.car_options = ["red_car", "pink_car", "camo_car", "babyblue_car", "black_car", "darkblue_car", "lime_car", "orange_car", "name_car"]
-        self.player_img = None
-
         # Run AssetLoader and save it in self.assets
         self.assets = AssetLoader()
         self.assets.load_images()
         self.assets.load_music()
+
+        self.car_options = self.assets.car_models
+        self.player_model = None
+        self.player_img = None
 
         # This variable controls whether the player is currently trying to accelerate
         # Is directly updated by player
@@ -77,7 +80,7 @@ class Game:
         self.playerpos = 0
 
         self.player_x = X_CENTRE
-        self.player_y = HEIGHT - 420
+        self.player_y = HEIGHT - SPACE_ABOVE_PLAYER
         self.player_vx = 0
         
         # Utils
@@ -156,7 +159,7 @@ class Game:
             welcome_rect = welcome_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 0.8))
             self.screen.blit(welcome_surf, welcome_rect)
             
-            title_surf = font.render("PLEASE CHOOSE YOUR VEHICLE", True, (255, 255, 255))
+            title_surf = font.render("PICK YOUR RIDE", True, (255, 255, 255))
             title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 1.5))
             self.screen.blit(title_surf, title_rect)
 
@@ -181,6 +184,7 @@ class Game:
                     for idx, rect in enumerate(rects):
                         if rect.collidepoint(click_pos):
                             chosen_key = self.car_options[idx]
+                            self.player_model = chosen_key
                             self.player_img = self.assets.get_image(chosen_key)
                             selecting = False
                     
@@ -365,7 +369,7 @@ class Game:
         pygame.display.flip()
 
     def spawn_npc(self): #npc = non player car
-        image = self.assets.get_image("babyblue_car")
+        _, image = self.assets.get_random_car(self.player_model)
         driving_direction = random.choice(["down", "up"])
         if driving_direction == "down":
             npc_speed = 100 #random.randint(80, 300) #to be modified later
@@ -376,13 +380,17 @@ class Game:
         apparent_speed = npc_speed - player_speed
 
         if apparent_speed < 0:
+            spawn_index = self.playerpos + (self.height - self.space_above_player) // TILE_SIZE_Y
             y = self.height + 120
-            spawn_row = self.tiles[self.playerpos]
-            spawn_data = self.tile_data[self.playerpos]
+            print(spawn_index, self.tiles[spawn_index], self.playerpos, image)
+            spawn_row = self.tiles[spawn_index]
+            spawn_data = self.tile_data[spawn_index]
         else:
             y = -120
-            spawn_row = self.tiles[self.playerpos]
-            spawn_data = self.tile_data[self.playerpos]
+            spawn_index = self.playerpos - self.space_above_player // TILE_SIZE_Y
+            print(spawn_index, self.tiles[spawn_index], self.playerpos, image)
+            spawn_row = self.tiles[spawn_index]
+            spawn_data = self.tile_data[spawn_index]
         
         lane_width = (len(spawn_row) - 1) * ROAD_SIZE_X
         x_start = X_CENTRE - lane_width / 2
@@ -392,7 +400,7 @@ class Game:
         for lane_index, lane_data in spawn_data["lanes"].items():
             
             if lane_data["dir"] == desired_dir or lane_data["dir"] == "both":
-                lane_x = self.lane_to_x(x_start,lane_index)
+                lane_x = self.lane_to_x(x_start, lane_index)
                 
                 if not self.lane_clear(lane_index, y):
                     continue
