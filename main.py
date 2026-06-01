@@ -120,8 +120,8 @@ class Game:
         selecting = True
         font = pygame.font.SysFont("Arial", 40, bold=True)
         
-        card_w, card_h = 160, 160  
-        spacing_x, spacing_y = 30, 40
+        card_w, card_h = 160, 190  
+        spacing_x, spacing_y = 30, 60
         
         row1_count = 5
         row1_start_x = X_CENTRE - ((card_w * row1_count + spacing_x * (row1_count - 1)) / 2)
@@ -152,7 +152,7 @@ class Game:
         car_name_font = pygame.font.SysFont("Arial", 18, bold=True)
 
         while selecting:
-            self.screen.fill("#555554")
+            self.screen.fill("#1B1B1B")
             
             welcome_font = pygame.font.SysFont("Arial", 70, bold=True) 
             welcome_surf = welcome_font.render("WELCOME TO GTA 6", True, (255, 215, 0)) 
@@ -207,7 +207,7 @@ class Game:
                 pygame.draw.rect(self.screen, color, rect, border, border_radius=12)
                 
                 car_surface = self.assets.get_image(self.car_options[idx])
-                car_rect = car_surface.get_rect(center=(rect.centerx, rect.centery - 25))
+                car_rect = car_surface.get_rect(center=(rect.centerx, rect.centery - 15))
                 self.screen.blit(car_surface, car_rect)
                 
                 raw_name = self.car_options[idx]
@@ -243,6 +243,53 @@ class Game:
             stats_text_rect = stats_text_surf.get_rect(center=stats_btn_rect.center)
             self.screen.blit(stats_text_surf, stats_text_rect)
 
+            pygame.display.flip()
+            self.clock.tick(30)
+
+    def stats_menu(self):
+        viewing_stats = True
+        title_font = pygame.font.SysFont("Arial", 60, bold=True)
+        content_font = pygame.font.SysFont("Arial", 30, bold=False)
+        back_font = pygame.font.SysFont("Arial", 24, bold=True)
+        
+        back_btn_w, back_btn_h = 160, 50
+        back_btn_rect = pygame.Rect(20, HEIGHT - 20 - back_btn_h, back_btn_w, back_btn_h)
+        
+        while viewing_stats:
+            self.screen.fill("#2c3e50") 
+            
+            title_surf = title_font.render("VEHICLE STATS", True, (255, 215, 0))
+            title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 6))
+            self.screen.blit(title_surf, title_rect)
+            
+            demo_surf = content_font.render("Stats details page coming soon...", True, (255, 255, 255))
+            demo_rect = demo_surf.get_rect(center=(X_CENTRE, Y_CENTRE))
+            self.screen.blit(demo_surf, demo_rect)
+            
+            mouse_pos = pygame.mouse.get_pos()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    import sys
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if back_btn_rect.collidepoint(event.pos):
+                        viewing_stats = False 
+            
+            if back_btn_rect.collidepoint(mouse_pos):
+                back_bg_color = (180, 180, 180)
+                back_border_width = 0
+            else:
+                back_bg_color = (100, 110, 120)
+                back_border_width = 2
+                
+            pygame.draw.rect(self.screen, back_bg_color, back_btn_rect, back_border_width, border_radius=6)
+            
+            back_text_surf = back_font.render("BACK", True, (255, 255, 255))
+            back_text_rect = back_text_surf.get_rect(center=back_btn_rect.center)
+            self.screen.blit(back_text_surf, back_text_rect)
+            
             pygame.display.flip()
             self.clock.tick(30)
 
