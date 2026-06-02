@@ -36,6 +36,7 @@ ROAD_TYPES = {
         "weight": 10,
         "min_length": 20,
         "max_length": 50,
+        "bounds": (2, 3, 4, 5, 6, 7, 8)
     },
 
     "small_town": {
@@ -65,12 +66,13 @@ ROAD_TYPES = {
         },
 
         "traffic": 0.7,
-        "weight": 5,
+        "weight": 50,
         "min_length": 15,
         "max_length": 40,
+        "bounds": (2, 3, 4, 5, 6)
     },
 
-    "street": {
+    "road": {
         "layout": "__.:./.:.__",
 
         "lanes": {
@@ -107,6 +109,7 @@ ROAD_TYPES = {
         "weight": 10,
         "min_length": 20,
         "max_length": 60,
+        "bounds": (2, 3, 4, 5, 6, 7, 8)
     },
 
     "stroad": {
@@ -153,5 +156,6 @@ ROAD_TYPES = {
         "weight": 10,
         "min_length": 20,
         "max_length": 60,
+        "bounds": (1, 2, 3, 4, 5, 6, 7, 8, 9)
     },
 }
