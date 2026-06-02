@@ -135,6 +135,10 @@ class AssetLoader:
             image_dir / "sandy.png"
         ).convert_alpha()
 
+        self.images["deadtree"] = pygame.image.load(
+            image_dir / "deadtree.png"
+        ).convert_alpha()
+        
         self.images["star"] = pygame.image.load(
             image_dir / "star.png"
         ).convert_alpha()
