@@ -4,10 +4,7 @@ BIOMES = {
         "background_images": [
             "grass_mud",
             "tree1",
-            "tree2",
-            "tree3",
-            "tree4",
-            "tree5",
+            "deadtre",
         ],
         "particle_effect": None,
         "road_weathering": 0.2
@@ -27,6 +24,11 @@ BIOMES = {
         "background_images": [
             "grass",
             "grass1",
+            "tree1",
+            "tree2",
+            "tree3",
+            "tree4",
+            "tree5",
         ],
         "particle_effect": None,
         "road_weathering": 0.1
