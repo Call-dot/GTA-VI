@@ -8,6 +8,8 @@ class Tiler:
         print(self.driving_side) #debug
         self.current_road = None
         self.rows_remaining = 0
+        self.intersecting = False
+        self.intersection = []
 
         self.choose_new_road()
 
@@ -23,26 +25,61 @@ class Tiler:
         self.rows_remaining = self.random.randint(self.current_road["min_length"], self.current_road["max_length"])
 
     def next_row(self):
-        if self.rows_remaining <= 0:
-            self.choose_new_road()
+        if self.rows_remaining <= 0 or self.intersection:
+            if not self.intersection:
+                exit_rows = self.exit()
+                print("OG road:", self.current_road, exit_rows)
+                self.choose_new_road()
+                entrance_rows = self.entrance()
+                print("new road:", self.current_road, entrance_rows)
+                self.intersecting = True
+                self.intersection.extend(exit_rows)
+                self.intersection.extend(entrance_rows)
+
+            else:
+                layout = self.intersection.pop(0)
+
+                return {
+                    "layout": layout,
+                    "lanes": self.resolve_lanes(self.current_road),
+                    "road_type": self.current_road
+                }
+
+
 
         self.rows_remaining -= 1
 
         # British driving
-        resolved_lanes = {}
-        for lane_index, lane_data in self.current_road["lanes"].items():
-            lane_copy = lane_data.copy()
-
-            if lane_copy["dir"] == "down":
-                lane_copy["dir"] = ("down" if self.driving_side == "right" else "up")
-
-            elif lane_copy["dir"] == "up":
-                lane_copy["dir"] = ("up" if self.driving_side == "right" else "down")
-
-            resolved_lanes[lane_index] = lane_copy
+        resolved_lanes = self.resolve_lanes(self.current_road)
 
         return {
             "layout": self.current_road["layout"],
             "lanes": resolved_lanes,
-            "road_type": self.current_road,
+            "road_type": self.current_road
         }
+    
+    def entrance(self):
+        return self.random.choice(self.current_road["entrances"])
+
+    def exit(self):
+        return self.random.choice(self.current_road["exits"])
+
+    def resolve_lanes(self, road):
+        resolved_lanes = {}
+
+        for lane_index, lane_data in road["lanes"].items():
+            lane_copy = lane_data.copy()
+
+            if lane_copy["dir"] == "down":
+                lane_copy["dir"] = (
+                    "down" if self.driving_side == "right" else "up"
+                )
+
+            elif lane_copy["dir"] == "up":
+                lane_copy["dir"] = (
+                    "up" if self.driving_side == "right" else "down"
+                )
+
+            resolved_lanes[lane_index] = lane_copy
+
+        return resolved_lanes

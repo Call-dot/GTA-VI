@@ -328,9 +328,7 @@ class Game:
 
     def out_of_bounds(self):
         _, char = self.on_road()
-        print("char", char)
         if char == "OOB" or char == "S":
-            print("OOF")
             return True
         else:
             return False
@@ -348,7 +346,6 @@ class Game:
         lane_index = round((self.player_x - x_start) / ROAD_SIZE_X)
 
         char = row[lane_index] if 0 <= lane_index < len(row) else 'OOB'
-        print(char)
         return (
             0 <= lane_index < len(row)
             and row[lane_index] == ".",
@@ -759,7 +756,6 @@ class Game:
         print("playerspeed:", self.playerspeed)
         print("playerdir:", self.playerdir)
         print("ts_down:", self.ts_down)
-
 
 if __name__ == "__main__":
     pygame.init()

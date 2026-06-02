@@ -103,6 +103,10 @@ class AssetLoader:
             image_dir / "white_dashed_road_line.png"
         ).convert_alpha()
 
+        self.images["white_solid_road_line"] = pygame.image.load(
+            image_dir / "white_dashed_road_line.png"
+        ).convert_alpha()
+
         self.images["yellow_solid_road_line"] = pygame.image.load(
             image_dir / "yellow_solid_road_line.png"
         ).convert_alpha()
