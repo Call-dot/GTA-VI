@@ -422,10 +422,22 @@ class Game:
         lane_x = self.lane_to_x(x_start, lane)
         return self.player_x - lane_x
 
-    def scenery_generator(self, type=None):
+    def scenery_generator(self, biome="grassland"):
         """Carey this is for you, I want this function to generate random scenery"""
+        scenery = []
+
+        biome = self.current_biome
+        data = BIOMES[biome]
+
         if type == "tree":
-            pass #tree generator
+            count = int(1000 * 600 * data["tree_density"] * 0.00005)
+
+        tree_images = [
+            img for img in data["backround_images"]
+            if "tree" in img 
+        ]
+        
+        pass #tree generator
         elif type == "rocks":
             pass #rock generator
         #If you don't know how to go about this, do as I've done for bg_generator() 
