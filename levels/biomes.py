@@ -5,7 +5,9 @@ BIOMES = {
             "grass_mud",
             "tree1",
             "tree2",
-            "tree3"
+            "tree3",
+            "tree4",
+            "tree5",
         ],
         "particle_effect": None,
         "road_weathering": 0.2
