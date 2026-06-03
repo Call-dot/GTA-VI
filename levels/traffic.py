@@ -62,7 +62,7 @@ class Tiler:
         }
     
     def sideroad(self, size=5):
-        return ["-+" * (int(HEIGHT // ROAD_SIZE_X)) + "-" for _ in range(size)]
+        return ["_+" * (int(HEIGHT // ROAD_SIZE_X)) + "_" for _ in range(size)]
     
     def entrance(self):
         return self.random.choice(self.current_road["entrances"])

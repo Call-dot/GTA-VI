@@ -315,6 +315,7 @@ class Game:
                 self.invincible = False
                 self.player_opacity = 255
 
+        print(char, self.running_red(char), self.tiler.signals(), self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"])
         if self.running_red(char):
             print("[!!!POLICE SIREN SOUNDS!!!]")
 
@@ -353,15 +354,14 @@ class Game:
         
     def running_red(self, char):
         signal, signaltimer = self.tiler.signals()
-        if char == "+" and signal:
+        if (char == "+" or char == "_") and signal:
             return True
         else:
             return False
     
     def on_road(self):
-
-        row = self.tile_data[self.playerpos]["layout"]
-
+        row = self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"]
+        print(row)
         lane_width = ((len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X))
         x_start = X_CENTRE - lane_width / 2
 
@@ -537,7 +537,7 @@ class Game:
                 elif char == "C":
                     img = self.assets.get_image("curb")
                 
-                elif char == "-":
+                elif char == "-" or char == "_":
                     img = self.assets.get_image("no_road_line")
 
                 elif char == ":":
