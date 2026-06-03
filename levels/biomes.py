@@ -15,6 +15,7 @@ BIOMES = {
         "tree_density": 0.9,
         "background_images": [
             "snow",
+            "snowpine",
         ],
         "particle_effect": None,
         "road_weathering": 0.5
