@@ -331,6 +331,7 @@ class Game:
 
         for enemy in self.enemies:
             if SPACE_ABOVE_PLAYER < enemy.world_y:
+                self.vlc("menu")
                 self.ui.select_car_menu()
                 return
 
@@ -359,7 +360,7 @@ class Game:
         self.flash_timer = now
 
         if self.health <= 0:
-            print("GAME OVER")
+            print("game over")
 
     def out_of_bounds(self, char):
         if char == "OOB" or char == "S":
@@ -379,7 +380,7 @@ class Game:
             self.chased == True
             popo = Police(
                 self,
-                self.assets.get_image("black_car"),
+                self.assets.get_image("policecar1"),
                 X_CENTRE,
                 -100,
                 MAX_SPEED // 0.8,
