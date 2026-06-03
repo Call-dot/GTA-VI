@@ -6,12 +6,14 @@ from levels.traffic import Tiler
 from levels.biomes import BIOMES
 from levels.roads import ROAD_TYPES
 from entities.npc import Npc
+from systems.ui import Ui
 
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption(NAME)
         self.clock = pygame.time.Clock()
+        self.t = 0
         self.running = True
         self.width = WIDTH
         self.height = HEIGHT
@@ -20,6 +22,7 @@ class Game:
         self.npcs = pygame.sprite.Group()
         random.seed(SEED)
         self.tiler = Tiler(
+            self,
             seed=SEED,
             driving_side="right" if NOT_BRITISH_DRIVING else "left"
         )
@@ -30,24 +33,15 @@ class Game:
         self.assets = AssetLoader()
         self.assets.load_images()
         self.assets.load_music()
+        self.ui = Ui(self)
 
         self.car_options = self.assets.car_models
 
         self.car_stats_database = {}
-        stat_presets = [
-            {"speed": 85, "control": 70, "lives": 3, "auto_align": 90},
-            {"speed": 95, "control": 60, "lives": 2, "auto_align": 40},
-            {"speed": 60, "control": 90, "lives": 4, "auto_align": 85},
-            {"speed": 75, "control": 75, "lives": 3, "auto_align": 70},
-            {"speed": 90, "control": 65, "lives": 2, "auto_align": 50},
-            {"speed": 50, "control": 95, "lives": 5, "auto_align": 95},
-            {"speed": 80, "control": 80, "lives": 3, "auto_align": 60},
-            {"speed": 100, "control": 50, "lives": 1, "auto_align": 30},
-            {"speed": 70, "control": 85, "lives": 4, "auto_align": 80}
-        ]
+        self.stat_presets = CAR_MODELS
         
         for idx, car_key in enumerate(self.car_options):
-            preset = stat_presets[idx % len(stat_presets)]
+            preset = self.stat_presets[idx % len(self.stat_presets)]
             self.car_stats_database[car_key] = preset
 
         self.player_model = None
@@ -76,7 +70,6 @@ class Game:
         self.player_vx = 0
         
         # Utils
-        self.t = 0
         self.tiles = []
         self.tile_data = []
         self.weathering = []
@@ -95,13 +88,15 @@ class Game:
         self.invincible = False
         self.invincible_time = 0
         self.spawncamp_delay = SPAWNCAMP_DELAY  # milliseconds
+        self.signal = True
+        self.signaltimer = 0
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
 
     def run(self):
         self.vlc("menu")
-        self.select_car_menu()
+        self.ui.select_car_menu()
         self.vlc("theme")
         while self.running:
             self.dt = self.clock.tick(30) / 1000
@@ -263,6 +258,9 @@ class Game:
             spawn_index = self.playerpos - self.space_above_player // TILE_SIZE_Y
             spawn_row = self.tiles[spawn_index]
             spawn_data = self.tile_data[spawn_index]
+
+        if "+" in spawn_row:
+            return
         
         lane_width = (len(spawn_row) - 1) * ROAD_SIZE_X
         x_start = X_CENTRE - lane_width / 2
@@ -307,6 +305,7 @@ class Game:
 
     def collisions(self):
         now = pygame.time.get_ticks()
+        _, char = self.on_road()
 
         # invincibility timer
         if self.invincible:
@@ -316,6 +315,11 @@ class Game:
 
             if now - self.invincible_time > self.spawncamp_delay:
                 self.invincible = False
+                self.player_opacity = 255
+
+        print(char, self.running_red(char), self.tiler.signals(), self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"])
+        if self.running_red(char):
+            print("[!!!POLICE SIREN SOUNDS!!!]")
 
         # NPC collision
         for npc in self.npcs:
@@ -324,7 +328,7 @@ class Game:
                 return  # IMPORTANT: prevent double damage same frame
 
         # road check
-        if self.out_of_bounds():
+        if self.out_of_bounds(char):
             print("OUCH")
             self.oof()
         
@@ -344,29 +348,28 @@ class Game:
         if self.health <= 0:
             print("GAME OVER")
 
-    def out_of_bounds(self):
-        _, char = self.on_road()
-        print("char", char)
+    def out_of_bounds(self, char):
         if char == "OOB" or char == "S":
-            print("OOF")
             return True
         else:
             return False
-
-    def is_lane_in_bounds(self, road_data, lane_index):
-        return lane_index in road_data["bounds"]
+        
+    def running_red(self, char):
+        self.signal, self.signaltimer = self.tiler.signals()
+        if (char == "+" or char == "`") and self.signal:
+            return True
+        else:
+            return False
     
     def on_road(self):
-
-        row = self.tile_data[self.playerpos]["layout"]
-
+        row = self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"]
+        print(row)
         lane_width = ((len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X))
         x_start = X_CENTRE - lane_width / 2
 
         lane_index = round((self.player_x - x_start) / ROAD_SIZE_X)
 
         char = row[lane_index] if 0 <= lane_index < len(row) else 'OOB'
-        print(char)
         return (
             0 <= lane_index < len(row)
             and row[lane_index] == ".",
@@ -422,10 +425,21 @@ class Game:
         lane_x = self.lane_to_x(x_start, lane)
         return self.player_x - lane_x
 
-    def scenery_generator(self, type=None):
+    def scenery_generator(self, biome="grassland"):
         """Carey this is for you, I want this function to generate random scenery"""
+        scenery = []
+
+        biome = self.current_biome
+        data = BIOMES[biome]
+
         if type == "tree":
-            pass #tree generator
+            count = int(1000 * 600 * data["tree_density"] * 0.00005)
+
+            tree_images = [
+                img for img in data["backround_images"]
+                if "tree" in img 
+            ]
+        
         elif type == "rocks":
             pass #rock generator
         #If you don't know how to go about this, do as I've done for bg_generator() 
@@ -448,24 +462,24 @@ class Game:
         """Generates strings for bgtiler"""
         if type == "weathering":
             pattern_key = ""
-            for i in range(8):
+            for i in range(int(HEIGHT // ROAD_SIZE_X)):
                 pattern_key = pattern_key + (str(random.randrange(1, NUM_WEATHERING_PATTERNS)))
             return pattern_key
         
-        else:
-            # R = road
-            # L = white line
-            # Y = yellow line
-            # _ = placeholder
-            if self.playerpos < 10:
-                return "__S|.|.|S__"
-            elif self.playerpos < 20:
-                return "SC./.|./.CS"
-            elif self.corner_test:
-                self.corner_test = False
-                return "1-./.|./.-2"
-            else:
-                return "_-./.|./.C_"
+        # else:
+        #     # R = road
+        #     # L = white line
+        #     # Y = yellow line
+        #     # _ = placeholder
+        #     if self.playerpos < 10:
+        #         return "__S|.|.|S__"
+        #     elif self.playerpos < 20:
+        #         return "SC./.|./.CS"
+        #     elif self.corner_test:
+        #         self.corner_test = False
+        #         return "1-./.|./.-2"
+        #     else:
+        #         return "_-./.|./.C_"
 
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
@@ -502,6 +516,7 @@ class Game:
         rows_visible = HEIGHT // TILE_SIZE_Y + 3
         start_row = max(0, self.playerpos - rows_visible)
         end_row = self.playerpos + rows_visible
+        signalimg = None
         
         for row_index in range(start_row, end_row):
             row = self.tiles[row_index]
@@ -515,7 +530,7 @@ class Game:
             #half_road_width = (len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X) + LINE_SIZE_X * 2
             
             for col_index, char in enumerate(row):
-                if char == ".":
+                if char == "." or char == "," or char == "+":
                     img = self.assets.get_image("road_tile")
                     weathering = self.assets.get_image("weathered_pattern_" + self.weathering[row_index][col_index // 2])
 
@@ -525,7 +540,7 @@ class Game:
                 elif char == "C":
                     img = self.assets.get_image("curb")
                 
-                elif char == "-":
+                elif char == "-" or char == "`":
                     img = self.assets.get_image("no_road_line")
 
                 elif char == ":":
@@ -569,7 +584,36 @@ class Game:
                 
                 elif char == "8":
                     img = self.assets.get_image("DR_concrete_merge")
+
+                elif char == "a":
+                    img = self.assets.get_image("UL_corner")
+
+                elif char == "s":
+                    img = self.assets.get_image("UR_corner")
+
+                elif char == "d":
+                    img = self.assets.get_image("DL_corner")
                 
+                elif char == "f":
+                    img = self.assets.get_image("DR_corner")
+                
+                elif char == "%":
+                    if self.signal:
+                        if self.signaltimer < 1:
+                            signalimg = self.assets.get_image("RY_light")
+                        else:
+                            signalimg = self.assets.get_image("R_light")
+
+                    else:
+                        if self.signaltimer < 1:
+                            signalimg = self.assets.get_image("Y_light")
+                        else:
+                            signalimg = self.assets.get_image("G_light")
+                    
+                    signalrect = signalimg.get_rect()
+                    signalrect.center = (x_start + ROAD_SIZE_X * col_index, y)
+                    continue
+
                 else:
                     continue
                 
@@ -582,285 +626,8 @@ class Game:
                 if char == "S":
                     pass
 
-    def select_car_menu(self):
-        selecting = True
-        font = pygame.font.SysFont("Arial", 40, bold=True)
-        
-        card_w, card_h = 160, 190  
-        spacing_x, spacing_y = 30, 60
-        
-        row1_count = 5
-        row1_start_x = X_CENTRE - ((card_w * row1_count + spacing_x * (row1_count - 1)) / 2)
-        row1_y = Y_CENTRE - card_h - (spacing_y / 2)
-     
-        row2_count = 4
-        row2_start_x = X_CENTRE - ((card_w * row2_count + spacing_x * (row2_count - 1)) / 2)
-        row2_y = Y_CENTRE + (spacing_y / 2)
-
-        rects = []
-        for idx in range(len(self.car_options)):
-            if idx < 5:
-                x = row1_start_x + idx * (card_w + spacing_x)
-                y = row1_y
-            else:
-                x = row2_start_x + (idx - 5) * (card_w + spacing_x)
-                y = row2_y
-            rects.append(pygame.Rect(x, y, card_w, card_h))
-
-        exit_btn_w, exit_btn_h = 160, 50
-        exit_btn_rect = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
-        exit_font = pygame.font.SysFont("Arial", 24, bold=True)
-        
-        stats_btn_w, stats_btn_h = 160, 50
-        stats_btn_rect = pygame.Rect(X_CENTRE - stats_btn_w / 2, HEIGHT - 20 - stats_btn_h, stats_btn_w, stats_btn_h)
-        stats_font = pygame.font.SysFont("Arial", 24, bold=True)
-        
-        car_name_font = pygame.font.SysFont("Arial", 18, bold=True)
-
-        while selecting:
-            self.screen.fill("#1B1B1B")
-            
-            welcome_font = pygame.font.SysFont("Arial", 70, bold=True) 
-            welcome_surf = welcome_font.render("WELCOME TO GTA 6", True, (255, 215, 0)) 
-            welcome_rect = welcome_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 0.8))
-            self.screen.blit(welcome_surf, welcome_rect)
-            
-            title_surf = font.render("PICK YOUR RIDE", True, (255, 255, 255))
-            title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 1.5))
-            self.screen.blit(title_surf, title_rect)
-
-            footer_font = pygame.font.SysFont("Arial", 16, bold=False)
-            footer_surf1 = footer_font.render("v1.0.0 Alpha", True, (120, 120, 125)) 
-            footer_rect1 = footer_surf1.get_rect(bottomright=(WIDTH - 20, HEIGHT - 20))
-            footer_surf2 = footer_font.render("Developed by Aiden, Tristan, and Carey", True, (120, 120, 125))
-            footer_rect2 = footer_surf2.get_rect(bottomright=footer_rect1.topright)
-            self.screen.blit(footer_surf1, footer_rect1)
-            self.screen.blit(footer_surf2, footer_rect2)
-
-            mouse_pos = pygame.mouse.get_pos()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    import sys
-                    sys.exit()
-                
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    click_pos = event.pos
-                    for idx, rect in enumerate(rects):
-                        if rect.collidepoint(click_pos):
-                            chosen_key = self.car_options[idx]
-                            self.player_model = chosen_key
-                            self.player_img = self.assets.get_image(chosen_key)
-                            self.current_car_idx = idx 
-                            selecting = False
-                    
-                    if exit_btn_rect.collidepoint(click_pos):
-                        pygame.quit()
-                        import sys
-                        sys.exit()
-                        
-                    if stats_btn_rect.collidepoint(click_pos):
-                        hovered_idx = 0
-                        for idx, rect in enumerate(rects):
-                            if rect.collidepoint(mouse_pos):
-                                hovered_idx = idx
-                        self.current_car_idx = hovered_idx
-                        self.stats_menu()
-            
-            for idx, rect in enumerate(rects):
-                if rect.collidepoint(mouse_pos):
-                    color = (0, 200, 100)
-                    border = 5
-                else:
-                    color = (180, 180, 180)
-                    border = 2
-                
-                pygame.draw.rect(self.screen, color, rect, border, border_radius=12)
-                
-                car_surface = self.assets.get_image(self.car_options[idx])
-                car_rect = car_surface.get_rect(center=(rect.centerx, rect.centery - 15))
-                self.screen.blit(car_surface, car_rect)
-                
-                raw_name = self.car_options[idx]
-                clean_name = raw_name.replace("_", " ").title()
-                
-                name_surf = car_name_font.render(clean_name, True, (255, 255, 255))
-                name_rect = name_surf.get_rect(center=(rect.centerx, rect.bottom - 20))
-                self.screen.blit(name_surf, name_rect)
-
-            if exit_btn_rect.collidepoint(mouse_pos):
-                exit_bg_color = (130, 20, 20)
-                exit_border_width = 0
-            else:
-                exit_bg_color = (200, 50, 50)
-                exit_border_width = 2
-                
-            pygame.draw.rect(self.screen, exit_bg_color, exit_btn_rect, exit_border_width, border_radius=6)
-            
-            exit_text_surf = exit_font.render("EXIT GAME", True, (255, 255, 255))
-            exit_text_rect = exit_text_surf.get_rect(center=exit_btn_rect.center)
-            self.screen.blit(exit_text_surf, exit_text_rect)
-
-            if stats_btn_rect.collidepoint(mouse_pos):
-                stats_bg_color = (20, 100, 130)
-                stats_border_width = 0
-            else:
-                stats_bg_color = (50, 150, 200)
-                stats_border_width = 2
-                
-            pygame.draw.rect(self.screen, stats_bg_color, stats_btn_rect, stats_border_width, border_radius=6)
-            
-            stats_text_surf = stats_font.render("STATS", True, (255, 255, 255))
-            stats_text_rect = stats_text_surf.get_rect(center=stats_btn_rect.center)
-            self.screen.blit(stats_text_surf, stats_text_rect)
-
-            pygame.display.flip()
-            self.clock.tick(30)
-
-    def stats_menu(self):
-        viewing_stats = True
-        title_font = pygame.font.SysFont("Arial", 45, bold=True)
-        label_font = pygame.font.SysFont("Arial", 26, bold=True)
-        value_font = pygame.font.SysFont("Arial", 22, bold=False)
-        back_font = pygame.font.SysFont("Arial", 24, bold=True)
-        grid_font = pygame.font.SysFont("Arial", 14, bold=True)
-        
-        # Track which car is being inspected (Default to the first one)
-        inspect_idx = getattr(self, 'current_car_idx', 0)
-        
-        # Layout Buttons & Panels
-        back_btn = pygame.Rect(20, HEIGHT - 70, 160, 50)
-        left_panel = pygame.Rect(40, HEIGHT // 5, WIDTH // 2 - 60, HEIGHT // 2 - 20)
-        
-        # Generate an organized 3x3 selection grid under the left panel for all 9 cars
-        grid_rects = []
-        grid_start_x = 40
-        grid_start_y = left_panel.bottom + 20
-        grid_item_w = (left_panel.width - 20) // 3
-        grid_item_h = 35
-        
-        for r in range(3):
-            for c in range(3):
-                idx = r * 3 + c
-                if idx < len(self.car_options):
-                    bx = grid_start_x + c * (grid_item_w + 10)
-                    by = grid_start_y + r * (grid_item_h + 8)
-                    grid_rects.append((idx, pygame.Rect(bx, by, grid_item_w, grid_item_h)))
-
-        stats_x = WIDTH // 2 + 40
-        stats_y = HEIGHT // 5 + 10
-        row_gap = 75
-        bar_max_w = 260
-        bar_h = 16
-
-        while viewing_stats:
-            self.screen.fill("#1a252f") 
-            mouse_pos = pygame.mouse.get_pos()
-            
-            car_key = self.car_options[inspect_idx]
-            clean_name = car_key.replace("_", " ").title()
-            
-            car_stats = getattr(self, 'car_stats_database', {}).get(car_key, {"speed": 50, "control": 50, "lives": 3, "auto_align": 50})
-            
-            # --- REMOVED AUTO ALIGN FROM BARS LIST ---
-            stat_rows = [
-                {"label": "Speed",      "val": car_stats["speed"],      "max": 100, "color": (231, 76, 60)},
-                {"label": "Control",    "val": car_stats["control"],    "max": 100, "color": (52, 152, 219)},
-                {"label": "Lives",      "val": car_stats["lives"],      "max": 5,   "color": (46, 204, 113)},
-            ]
-
-            # 1. HEADER
-            title_surf = title_font.render("VEHICLE REPOSITORY STATS", True, (255, 215, 0))
-            self.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, 45)))
-
-            # 2. LEFT DISPLAY PANEL
-            pygame.draw.rect(self.screen, (44, 62, 80), left_panel, border_radius=12)
-            pygame.draw.rect(self.screen, (255, 215, 0), left_panel, 2, border_radius=12)
-            
-            car_img = self.assets.get_image(car_key)
-            scaled_img = pygame.transform.scale(car_img, (int(car_img.get_width() * 1.4), int(car_img.get_height() * 1.4)))
-            self.screen.blit(scaled_img, scaled_img.get_rect(center=(left_panel.centerx, left_panel.centery - 15)))
-            
-            name_surf = label_font.render(clean_name, True, (255, 255, 255))
-            self.screen.blit(name_surf, name_surf.get_rect(center=(left_panel.centerx, left_panel.bottom - 25)))
-
-            # 3. LOWER LEFT GRID
-            for idx, r_box in grid_rects:
-                btn_car_key = self.car_options[idx]
-                btn_name = btn_car_key.replace("_", " ").title()
-                
-                if idx == inspect_idx:
-                    bg_col, text_col = (255, 215, 0), (0, 0, 0)
-                elif r_box.collidepoint(mouse_pos):
-                    bg_col, text_col = (52, 73, 94), (255, 255, 255)
-                else:
-                    bg_col, text_col = (44, 62, 80), (149, 165, 166)
-                    
-                pygame.draw.rect(self.screen, bg_col, r_box, border_radius=6)
-                btn_txt = grid_font.render(btn_name, True, text_col)
-                self.screen.blit(btn_txt, btn_txt.get_rect(center=r_box.center))
-
-            # 4. RIGHT COLUMN: LABELS & STAT LINES (Speed, Control, Lives)
-            for i, row in enumerate(stat_rows):
-                curr_y = stats_y + (i * row_gap)
-                
-                lbl = label_font.render(row["label"], True, (255, 255, 255))
-                self.screen.blit(lbl, (stats_x, curr_y))
-                
-                val_str = f"{row['val']}/{row['max']}" if row['label'] != "Lives" else f"{row['val']} HP"
-                val_surf = value_font.render(val_str, True, (200, 200, 200))
-                self.screen.blit(val_surf, (stats_x + bar_max_w - val_surf.get_width(), curr_y + 4))
-                
-                track = pygame.Rect(stats_x, curr_y + 36, bar_max_w, bar_h)
-                pygame.draw.rect(self.screen, (30, 39, 46), track, border_radius=6)
-                
-                fill_w = int(bar_max_w * (row["val"] / row["max"]))
-                fill_rect = pygame.Rect(stats_x, curr_y + 36, fill_w, bar_h)
-                pygame.draw.rect(self.screen, row["color"], fill_rect, border_radius=6)
-
-            # 5. SPECIAL RENDER: AUTO ALIGN AS ON/OFF TEXT ONLY
-            # Positioned cleanly directly beneath the 3 standard stat rows
-            align_y = stats_y + (3 * row_gap)
-            
-            align_lbl = label_font.render("Auto Align", True, (255, 255, 255))
-            self.screen.blit(align_lbl, (stats_x, align_y))
-            
-            # Read from database: if value > 50 consider it ON, otherwise OFF
-            # (Or modify your database map directly to use True/False if preferred!)
-            is_on = car_stats["auto_align"] > 50 
-            status_text = "ON" if is_on else "OFF"
-            status_color = (46, 204, 113) if is_on else (231, 76, 60) # Green if ON, Red if OFF
-            
-            status_surf = title_font.render(status_text, True, status_color)
-            self.screen.blit(status_surf, (stats_x, align_y + 32))
-
-            # 6. INPUT EVENT MONITORING
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    import sys
-                    sys.exit()
-                    
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if back_btn.collidepoint(event.pos):
-                        viewing_stats = False
-                    
-                    for idx, r_box in grid_rects:
-                        if r_box.collidepoint(event.pos):
-                            inspect_idx = idx
-
-            if back_btn.collidepoint(mouse_pos):
-                b_color, b_border = (180, 180, 180), 0
-            else:
-                b_color, b_border = (100, 110, 120), 2
-                
-            pygame.draw.rect(self.screen, b_color, back_btn, b_border, border_radius=6)
-            b_text = back_font.render("BACK", True, (255, 255, 255))
-            self.screen.blit(b_text, b_text.get_rect(center=back_btn.center))
-            
-            pygame.display.flip()
-            self.clock.tick(30)
+        if signalimg:
+            self.screen.blit(signalimg, signalrect)
 
     def vlc(self, music):
         pygame.mixer.music.load(
@@ -880,7 +647,6 @@ class Game:
         print("playerspeed:", self.playerspeed)
         print("playerdir:", self.playerdir)
         print("ts_down:", self.ts_down)
-
 
 if __name__ == "__main__":
     pygame.init()
