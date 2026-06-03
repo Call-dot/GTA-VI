@@ -43,6 +43,22 @@ class AssetLoader:
             image_dir / "DR_concrete_corner.png"
         ).convert_alpha()
 
+        self.images["UL_corner"] = pygame.image.load(
+            image_dir / "UL_corner.png"
+        ).convert_alpha()
+
+        self.images["UR_corner"] = pygame.image.load(
+            image_dir / "UR_corner.png"
+        ).convert_alpha()
+
+        self.images["DL_corner"] = pygame.image.load(
+            image_dir / "DL_corner.png"
+        ).convert_alpha()
+
+        self.images["DR_corner"] = pygame.image.load(
+            image_dir / "DR_corner.png"
+        ).convert_alpha()
+
         self.images["UL_concrete_merge"] = pygame.image.load(
             image_dir / "UL_concrete_merge.png"
         ).convert_alpha()

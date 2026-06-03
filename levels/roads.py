@@ -89,17 +89,17 @@ ROAD_TYPES = {
     },
 
     "country": {
-        "layout": ".;.",
+        "layout": "-.;.-",
 
         "lanes": {
-            0: {
+            1: {
                 "dir": "down",
                 "type": "driving",
                 "allow_spawn": True,
                 "allow_overtake": True,
             },
 
-            2: {
+            3: {
                 "dir": "up",
                 "type": "driving",
                 "allow_spawn": True,
@@ -108,11 +108,11 @@ ROAD_TYPES = {
         },
 
         "entrances": (
-            (".;.",),
+            ("d-.;.-f", "|.;.|",),
         ),
 
         "exits": (
-            (".;.",),
+            ("|.;.|", "a-.;.-s",),
         ),
 
         "traffic": 1.0,

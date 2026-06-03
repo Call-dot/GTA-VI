@@ -20,6 +20,7 @@ class Npc(pygame.sprite.Sprite):
         self.world_x = x
         self.world_y = y
 
+
     def update(self, dt):
         car_ahead, distance = self.get_car_ahead()
         apparent_speed = self.speed - self.game.playerspeed

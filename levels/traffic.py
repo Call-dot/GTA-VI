@@ -1,8 +1,9 @@
 import random
 from levels.roads import ROAD_TYPES
+from settings import *
 
 class Tiler:
-    def __init__(self, seed=None, driving_side="right"):
+    def __init__(self, game, seed=None, driving_side="right"):
         self.random = random.Random(seed)
         self.driving_side = driving_side
         print(self.driving_side) #debug
@@ -10,6 +11,10 @@ class Tiler:
         self.rows_remaining = 0
         self.intersecting = False
         self.intersection = []
+        self.signal = True
+        self.signaltimer = 0
+        self.game = game
+        self.t = self.game.t
 
         self.choose_new_road()
 
@@ -28,27 +33,25 @@ class Tiler:
         if self.rows_remaining <= 0 or self.intersection:
             if not self.intersection:
                 exit_rows = self.exit()
-                print("OG road:", self.current_road, exit_rows)
+                print("OG road:", self.current_road["layout"], exit_rows)
                 self.choose_new_road()
                 entrance_rows = self.entrance()
-                print("new road:", self.current_road, entrance_rows)
+                print("new road:", self.current_road["layout"], entrance_rows)
                 self.intersecting = True
                 self.intersection.extend(exit_rows)
+                self.intersection.extend(self.sideroad(random.randrange(1, 5)))
                 self.intersection.extend(entrance_rows)
 
-            else:
-                layout = self.intersection.pop(0)
+            print(self.intersection)
+            layout = self.intersection.pop(0)
 
-                return {
-                    "layout": layout,
-                    "lanes": self.resolve_lanes(self.current_road),
-                    "road_type": self.current_road
-                }
-
-
+            return {
+                "layout": layout,
+                "lanes": self.resolve_lanes(self.current_road),
+                "road_type": self.current_road
+            }
 
         self.rows_remaining -= 1
-
         # British driving
         resolved_lanes = self.resolve_lanes(self.current_road)
 
@@ -57,6 +60,9 @@ class Tiler:
             "lanes": resolved_lanes,
             "road_type": self.current_road
         }
+    
+    def sideroad(self, size=5):
+        return ["-+" * (int(HEIGHT // ROAD_SIZE_X)) + "-" for _ in range(size)]
     
     def entrance(self):
         return self.random.choice(self.current_road["entrances"])
@@ -83,3 +89,12 @@ class Tiler:
             resolved_lanes[lane_index] = lane_copy
 
         return resolved_lanes
+    
+    def signals(self):
+        if self.signaltimer <= 0:
+            self.signaltimer = self.random.randrange(MIN_LIGHT_TIME, MAX_LIGHT_TIME)
+            self.signal = not self.signal
+        else:
+            self.signaltimer -= self.game.dt
+            # print("RED LIGHT:", self.signal, "TIME LEFT:", self.signaltimer)
+        return self.signal, self.signaltimer
