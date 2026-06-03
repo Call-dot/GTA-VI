@@ -131,6 +131,22 @@ class AssetLoader:
             image_dir / "yellow_dashed_road_line.png"
         ).convert_alpha()
 
+        self.images["R_light"] = pygame.image.load(
+            image_dir / "R_light.png"
+        ).convert_alpha()
+
+        self.images["RY_light"] = pygame.image.load(
+            image_dir / "RY_light.png"
+        ).convert_alpha()
+
+        self.images["Y_light"] = pygame.image.load(
+            image_dir / "Y_light.png"
+        ).convert_alpha()
+
+        self.images["G_light"] = pygame.image.load(
+            image_dir / "G_light.png"
+        ).convert_alpha()
+
         def load_car(model):
             self.images[model] = pygame.image.load(
                 image_dir / f"{model}.png"
@@ -138,6 +154,10 @@ class AssetLoader:
 
         for car in self.car_models:
             load_car(car)
+        
+        self.images["star"] = pygame.image.load(
+            image_dir / "star.png"
+        ).convert_alpha()
 
         self.images["snow"] = pygame.image.load(
             image_dir / "snow.png"
@@ -157,10 +177,6 @@ class AssetLoader:
 
         self.images["deadtree"] = pygame.image.load(
             image_dir / "deadtree.png"
-        ).convert_alpha()
-        
-        self.images["star"] = pygame.image.load(
-            image_dir / "star.png"
         ).convert_alpha()
 
         self.images["deadbush"] = pygame.image.load(

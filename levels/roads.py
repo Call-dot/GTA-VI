@@ -41,7 +41,7 @@ ROAD_TYPES = {
         ),
 
         "traffic": 1.0,
-        "weight": 10,
+        "weight": 100,
         "min_length": 20,
         "max_length": 20,
         "bounds": (2, 3, 4, 5, 6, 7, 8)

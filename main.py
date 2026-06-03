@@ -88,6 +88,8 @@ class Game:
         self.invincible = False
         self.invincible_time = 0
         self.spawncamp_delay = SPAWNCAMP_DELAY  # milliseconds
+        self.signal = True
+        self.signaltimer = 0
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
@@ -353,8 +355,8 @@ class Game:
             return False
         
     def running_red(self, char):
-        signal, signaltimer = self.tiler.signals()
-        if (char == "+" or char == "_") and signal:
+        self.signal, self.signaltimer = self.tiler.signals()
+        if (char == "+" or char == "`") and self.signal:
             return True
         else:
             return False
@@ -464,20 +466,20 @@ class Game:
                 pattern_key = pattern_key + (str(random.randrange(1, NUM_WEATHERING_PATTERNS)))
             return pattern_key
         
-        else:
-            # R = road
-            # L = white line
-            # Y = yellow line
-            # _ = placeholder
-            if self.playerpos < 10:
-                return "__S|.|.|S__"
-            elif self.playerpos < 20:
-                return "SC./.|./.CS"
-            elif self.corner_test:
-                self.corner_test = False
-                return "1-./.|./.-2"
-            else:
-                return "_-./.|./.C_"
+        # else:
+        #     # R = road
+        #     # L = white line
+        #     # Y = yellow line
+        #     # _ = placeholder
+        #     if self.playerpos < 10:
+        #         return "__S|.|.|S__"
+        #     elif self.playerpos < 20:
+        #         return "SC./.|./.CS"
+        #     elif self.corner_test:
+        #         self.corner_test = False
+        #         return "1-./.|./.-2"
+        #     else:
+        #         return "_-./.|./.C_"
 
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
@@ -514,6 +516,7 @@ class Game:
         rows_visible = HEIGHT // TILE_SIZE_Y + 3
         start_row = max(0, self.playerpos - rows_visible)
         end_row = self.playerpos + rows_visible
+        signalimg = None
         
         for row_index in range(start_row, end_row):
             row = self.tiles[row_index]
@@ -537,7 +540,7 @@ class Game:
                 elif char == "C":
                     img = self.assets.get_image("curb")
                 
-                elif char == "-" or char == "_":
+                elif char == "-" or char == "`":
                     img = self.assets.get_image("no_road_line")
 
                 elif char == ":":
@@ -594,6 +597,23 @@ class Game:
                 elif char == "f":
                     img = self.assets.get_image("DR_corner")
                 
+                elif char == "%":
+                    if self.signal:
+                        if self.signaltimer < 1:
+                            signalimg = self.assets.get_image("RY_light")
+                        else:
+                            signalimg = self.assets.get_image("R_light")
+
+                    else:
+                        if self.signaltimer < 1:
+                            signalimg = self.assets.get_image("Y_light")
+                        else:
+                            signalimg = self.assets.get_image("G_light")
+                    
+                    signalrect = signalimg.get_rect()
+                    signalrect.center = (x_start + ROAD_SIZE_X * col_index, y)
+                    continue
+
                 else:
                     continue
                 
@@ -605,6 +625,9 @@ class Game:
                     self.screen.blit(weathering, img_rect)
                 if char == "S":
                     pass
+
+        if signalimg:
+            self.screen.blit(signalimg, signalrect)
 
     def vlc(self, music):
         pygame.mixer.music.load(

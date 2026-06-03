@@ -38,8 +38,10 @@ class Tiler:
                 entrance_rows = self.entrance()
                 print("new road:", self.current_road["layout"], entrance_rows)
                 self.intersecting = True
+                sideroad_size = random.choice([1, 3, 5])
+                print(sideroad_size)
                 self.intersection.extend(exit_rows)
-                self.intersection.extend(self.sideroad(random.randrange(1, 5)))
+                self.intersection.extend(self.sideroad(sideroad_size))
                 self.intersection.extend(entrance_rows)
 
             print(self.intersection)
@@ -62,7 +64,11 @@ class Tiler:
         }
     
     def sideroad(self, size=5):
-        return ["_+" * (int(HEIGHT // ROAD_SIZE_X)) + "_" for _ in range(size)]
+        road = ["`+" * (int(HEIGHT // ROAD_SIZE_X)) + "`" for _ in range(size)]
+        temp_list = list(road[size // 2])
+        temp_list[len(temp_list)//2] = '%'
+        road[size // 2] = "".join(temp_list)
+        return road
     
     def entrance(self):
         return self.random.choice(self.current_road["entrances"])
