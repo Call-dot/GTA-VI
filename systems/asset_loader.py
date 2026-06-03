@@ -192,6 +192,7 @@ class AssetLoader:
 
         self.music["theme"] = music_dir / "GTA6_theme_song.mp3"
         self.music["menu"] = music_dir / "menumusic.wav"
+        self.music["police"] = music_dir / "guardian_theme.mp3"
 
     def get_image(self, name):
         return self.images[name]

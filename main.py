@@ -6,6 +6,7 @@ from levels.traffic import Tiler
 from levels.biomes import BIOMES
 from levels.roads import ROAD_TYPES
 from entities.npc import Npc
+from entities.enemy import Police
 from systems.ui import Ui
 
 class Game:
@@ -20,6 +21,7 @@ class Game:
         self.space_above_player = SPACE_ABOVE_PLAYER
         self.all_sprites = pygame.sprite.Group()
         self.npcs = pygame.sprite.Group()
+        self.enemies = pygame.sprite.Group()
         random.seed(SEED)
         self.tiler = Tiler(
             self,
@@ -68,6 +70,7 @@ class Game:
         self.player_x = X_CENTRE
         self.player_y = HEIGHT - SPACE_ABOVE_PLAYER
         self.player_vx = 0
+        self.player_rect = None
         
         # Utils
         self.tiles = []
@@ -90,6 +93,7 @@ class Game:
         self.spawncamp_delay = SPAWNCAMP_DELAY  # milliseconds
         self.signal = True
         self.signaltimer = 0
+        self.chased = False
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
@@ -107,8 +111,7 @@ class Game:
             self.update()
             self.bg_tiler()
             self.draw()
-            if DEBUG:
-                print(len(self.tiles))
+            print("Chasing is", self.chased)
         print(self.tiles)
 
     def events(self):
@@ -319,7 +322,17 @@ class Game:
 
         print(char, self.running_red(char), self.tiler.signals(), self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"])
         if self.running_red(char):
-            print("[!!!POLICE SIREN SOUNDS!!!]")
+            if self.chased == False:
+                print("[!!!POLICE SIREN SOUNDS!!!]")
+                self.spawn_police()
+                self.chased = True
+            else:
+                pass
+
+        for enemy in self.enemies:
+            if SPACE_ABOVE_PLAYER < enemy.world_y:
+                self.ui.select_car_menu()
+                return
 
         # NPC collision
         for npc in self.npcs:
@@ -360,7 +373,26 @@ class Game:
             return True
         else:
             return False
-    
+        
+    def spawn_police(self):
+        if self.chased == False:
+            self.chased == True
+            popo = Police(
+                self,
+                self.assets.get_image("black_car"),
+                X_CENTRE,
+                -100,
+                MAX_SPEED // 0.8,
+                0,
+                "down"
+            )
+            self.enemies.add(popo)
+            self.all_sprites.add(popo)
+            self.vlc("police")
+        else:
+            pass
+                
+            
     def on_road(self):
         row = self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"]
         print(row)
@@ -629,11 +661,11 @@ class Game:
         if signalimg:
             self.screen.blit(signalimg, signalrect)
 
-    def vlc(self, music):
+    def vlc(self, music, times=-1):
         pygame.mixer.music.load(
             self.assets.get_music(music)
         )
-        pygame.mixer.music.play(-1)
+        pygame.mixer.music.play(times)
     
     def lane_to_x(self, x_start, lane_index):
         return x_start + lane_index * ROAD_SIZE_X
