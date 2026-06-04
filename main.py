@@ -15,6 +15,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.t = 0
         self.running = True
+        self.gaming = False
         self.width = WIDTH
         self.height = HEIGHT
         self.space_above_player = SPACE_ABOVE_PLAYER
@@ -90,6 +91,7 @@ class Game:
         self.spawncamp_delay = SPAWNCAMP_DELAY  # milliseconds
         self.signal = True
         self.signaltimer = 0
+        self.music = None
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
@@ -99,16 +101,18 @@ class Game:
         self.ui.select_car_menu()
         self.vlc("theme")
         while self.running:
-            self.dt = self.clock.tick(30) / 1000
-            self.t += self.dt
-            self.events()
-            self.playerinput(self.dt)
-            self.player()
-            self.update()
-            self.bg_tiler()
-            self.draw()
-            if DEBUG:
-                print(len(self.tiles))
+            while 
+            while self.gaming:
+                self.dt = self.clock.tick(30) / 1000
+                self.t += self.dt
+                self.events()
+                self.playerinput(self.dt)
+                self.player()
+                self.update()
+                self.bg_tiler()
+                self.draw()
+                if DEBUG:
+                    print(len(self.tiles))
         print(self.tiles)
 
     def events(self):
@@ -630,6 +634,8 @@ class Game:
             self.screen.blit(signalimg, signalrect)
 
     def vlc(self, music):
+        if self.music == music:
+            return
         pygame.mixer.music.load(
             self.assets.get_music(music)
         )
