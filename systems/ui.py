@@ -1,6 +1,5 @@
 import pygame
 import random
-from settings import *
 
 class Ui:
     def __init__(self, game):
@@ -9,6 +8,11 @@ class Ui:
     def select_car_menu(self):
         selecting = True
         font = pygame.font.SysFont("Arial", 40, bold=True)
+        
+        WIDTH = self.game.screen.get_width()
+        HEIGHT = self.game.screen.get_height()
+        X_CENTRE = WIDTH // 2
+        Y_CENTRE = HEIGHT // 2
         
         card_w, card_h = 160, 190  
         spacing_x, spacing_y = 30, 60
@@ -150,14 +154,19 @@ class Ui:
         back_font = pygame.font.SysFont("Arial", 24, bold=True)
         grid_font = pygame.font.SysFont("Arial", 14, bold=True)
         
-        # Track which car is being inspected (Default to the first one)
-        inspect_idx = getattr(self, 'current_car_idx', 0)
+        WIDTH = self.game.screen.get_width()
+        HEIGHT = self.game.screen.get_height()
+        X_CENTRE = WIDTH // 2
         
-        # Layout Buttons & Panels
+        inspect_idx = getattr(self.game, 'current_car_idx', 0)
+        
+        spin_angle = 0.0
+        spin_speed = 3.0  
+        last_car_key = None
+        
         back_btn = pygame.Rect(20, HEIGHT - 70, 160, 50)
         left_panel = pygame.Rect(40, HEIGHT // 5, WIDTH // 2 - 60, HEIGHT // 2 - 20)
         
-        # Generate an organized 3x3 selection grid under the left panel for all 9 cars
         grid_rects = []
         grid_start_x = 40
         grid_start_y = left_panel.bottom + 20
@@ -185,31 +194,36 @@ class Ui:
             car_key = self.game.car_options[inspect_idx]
             clean_name = car_key.replace("_", " ").title()
             
-            car_stats = getattr(self, 'car_stats_database', {}).get(car_key, {"speed": 50, "control": 50, "lives": 3, "auto_align": 50})
+            if car_key != last_car_key:
+                spin_angle = 0.0
+                last_car_key = car_key
             
-            # --- REMOVED AUTO ALIGN FROM BARS LIST ---
+            spin_angle = (spin_angle + spin_speed) % 360.0
+            
+            car_stats = getattr(self.game, 'car_stats_database', {}).get(car_key, {"speed": 50, "control": 50, "lives": 3, "auto_align": 50})
+            
             stat_rows = [
                 {"label": "Speed",      "val": car_stats["speed"],      "max": 100, "color": (231, 76, 60)},
                 {"label": "Control",    "val": car_stats["control"],    "max": 100, "color": (52, 152, 219)},
                 {"label": "Lives",      "val": car_stats["lives"],      "max": 5,   "color": (46, 204, 113)},
             ]
 
-            # 1. HEADER
             title_surf = title_font.render("VEHICLE REPOSITORY STATS", True, (255, 215, 0))
             self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, 45)))
 
-            # 2. LEFT DISPLAY PANEL
             pygame.draw.rect(self.game.screen, (44, 62, 80), left_panel, border_radius=12)
             pygame.draw.rect(self.game.screen, (255, 215, 0), left_panel, 2, border_radius=12)
             
             car_img = self.game.assets.get_image(car_key)
             scaled_img = pygame.transform.scale(car_img, (int(car_img.get_width() * 1.4), int(car_img.get_height() * 1.4)))
-            self.game.screen.blit(scaled_img, scaled_img.get_rect(center=(left_panel.centerx, left_panel.centery - 15)))
+            
+            rotated_img = pygame.transform.rotate(scaled_img, spin_angle)
+            rotated_rect = rotated_img.get_rect(center=(left_panel.centerx, left_panel.centery - 15))
+            self.game.screen.blit(rotated_img, rotated_rect)
             
             name_surf = label_font.render(clean_name, True, (255, 255, 255))
             self.game.screen.blit(name_surf, name_surf.get_rect(center=(left_panel.centerx, left_panel.bottom - 25)))
 
-            # 3. LOWER LEFT GRID
             for idx, r_box in grid_rects:
                 btn_car_key = self.game.car_options[idx]
                 btn_name = btn_car_key.replace("_", " ").title()
@@ -225,7 +239,6 @@ class Ui:
                 btn_txt = grid_font.render(btn_name, True, text_col)
                 self.game.screen.blit(btn_txt, btn_txt.get_rect(center=r_box.center))
 
-            # 4. RIGHT COLUMN: LABELS & STAT LINES (Speed, Control, Lives)
             for i, row in enumerate(stat_rows):
                 curr_y = stats_y + (i * row_gap)
                 
@@ -243,23 +256,18 @@ class Ui:
                 fill_rect = pygame.Rect(stats_x, curr_y + 36, fill_w, bar_h)
                 pygame.draw.rect(self.game.screen, row["color"], fill_rect, border_radius=6)
 
-            # 5. SPECIAL RENDER: AUTO ALIGN AS ON/OFF TEXT ONLY
-            # Positioned cleanly directly beneath the 3 standard stat rows
             align_y = stats_y + (3 * row_gap)
             
             align_lbl = label_font.render("Auto Align", True, (255, 255, 255))
             self.game.screen.blit(align_lbl, (stats_x, align_y))
             
-            # Read from database: if value > 50 consider it ON, otherwise OFF
-            # (Or modify your database map directly to use True/False if preferred!)
             is_on = car_stats["auto_align"] > 50 
             status_text = "ON" if is_on else "OFF"
-            status_color = (46, 204, 113) if is_on else (231, 76, 60) # Green if ON, Red if OFF
+            status_color = (46, 204, 113) if is_on else (231, 76, 60)
             
             status_surf = title_font.render(status_text, True, status_color)
             self.game.screen.blit(status_surf, (stats_x, align_y + 32))
 
-            # 6. INPUT EVENT MONITORING
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()

@@ -187,11 +187,24 @@ class AssetLoader:
             image_dir / "snowtree.png"
         ).convert_alpha()
         
+        self.images["snowpine"] = pygame.image.load(
+            image_dir / "snowpine.png"
+        ).convert_alpha()
+
+        self.images["policecar"] = pygame.image.load(
+            image_dir / "policecar.png"
+        ).convert_alpha()
+
+        self.images["policecar1"] = pygame.image.load(
+            image_dir / "policecar1.png"
+        ).convert_alpha()  
+
     def load_music(self):
         music_dir = Path("assets/music")
 
         self.music["theme"] = music_dir / "GTA6_theme_song.mp3"
         self.music["menu"] = music_dir / "menumusic.wav"
+        self.music["police"] = music_dir / "guardian_theme.mp3"
 
     def get_image(self, name):
         return self.images[name]
