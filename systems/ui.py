@@ -204,9 +204,9 @@ class Ui:
             car_stats = getattr(self.game, 'car_stats_database', {}).get(car_key, {"speed": 50, "control": 50, "lives": 3, "auto_align": 50})
             
             stat_rows = [
-                {"label": "Speed",      "val": car_stats["speed"],      "max": 100, "color": (231, 76, 60)},
-                {"label": "Control",    "val": car_stats["control"],    "max": 100, "color": (52, 152, 219)},
-                {"label": "Lives",      "val": car_stats["lives"],      "max": 5,   "color": (46, 204, 113)},
+                {"label": "Speed",      "val": car_stats["speed"],      "max": 100, "color": (231, 76, 60),  "type": "bar"},
+                {"label": "Control",    "val": car_stats["control"],    "max": 100, "color": (52, 152, 219), "type": "bar"},
+                {"label": "Lives",      "val": car_stats["lives"],      "max": 5,   "color": (46, 204, 113), "type": "stars"},
             ]
 
             title_surf = title_font.render("VEHICLE REPOSITORY STATS", True, (255, 215, 0))
@@ -246,16 +246,28 @@ class Ui:
                 lbl = label_font.render(row["label"], True, (255, 255, 255))
                 self.game.screen.blit(lbl, (stats_x, curr_y))
                 
-                val_str = f"{row['val']}/{row['max']}" if row['label'] != "Lives" else f"{row['val']} HP"
+                val_str = f"{row['val']}/{row['max']}" if row['type'] != "stars" else f"{row['val']} HP"
                 val_surf = value_font.render(val_str, True, (200, 200, 200))
                 self.game.screen.blit(val_surf, (stats_x + bar_max_w - val_surf.get_width(), curr_y + 4))
                 
-                track = pygame.Rect(stats_x, curr_y + 36, bar_max_w, bar_h)
-                pygame.draw.rect(self.game.screen, (30, 39, 46), track, border_radius=6)
-                
-                fill_w = int(bar_max_w * (row["val"] / row["max"]))
-                fill_rect = pygame.Rect(stats_x, curr_y + 36, fill_w, bar_h)
-                pygame.draw.rect(self.game.screen, row["color"], fill_rect, border_radius=6)
+                if row["type"] == "bar":
+                    track = pygame.Rect(stats_x, curr_y + 36, bar_max_w, bar_h)
+                    pygame.draw.rect(self.game.screen, (30, 39, 46), track, border_radius=6)
+                    
+                    fill_w = int(bar_max_w * (row["val"] / row["max"]))
+                    fill_rect = pygame.Rect(stats_x, curr_y + 36, fill_w, bar_h)
+                    pygame.draw.rect(self.game.screen, row["color"], fill_rect, border_radius=6)
+                    
+                elif row["type"] == "stars":
+                    star_img = self.game.assets.get_image('star')
+                    
+                    star_img = pygame.transform.scale(star_img, (45, 45))
+                    
+                    star_spacing = 40
+                    for star_idx in range(row["val"]):
+                        sx = stats_x + (star_idx * star_spacing)
+                        sy = curr_y + 34
+                        self.game.screen.blit(star_img, (sx, sy))
 
             align_y = stats_y + (3 * row_gap)
             
