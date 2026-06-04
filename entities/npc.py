@@ -1,5 +1,6 @@
 # npc = non player car
 import pygame
+from settings import *
 
 FOLLOW_DISTANCE = 220
 FRICTION = 4
@@ -19,6 +20,7 @@ class Npc(pygame.sprite.Sprite):
         self.dir = dir
         self.world_x = x
         self.world_y = y
+        self.hitbox = None
 
 
     def update(self, dt):
@@ -36,6 +38,8 @@ class Npc(pygame.sprite.Sprite):
         
         self.world_y += apparent_speed * dt
         self.rect.center = (self.world_x, self.world_y)
+        hitbox = self.rect.inflate(-HITBOX_TOLERANCE, -HITBOX_TOLERANCE)
+        self.hitbox = hitbox
 
         angle = 180 if self.speed > 0 else 0
         self.image = pygame.transform.rotate(self.base_image, angle)

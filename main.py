@@ -72,6 +72,8 @@ class Game:
         self.player_y = HEIGHT - SPACE_ABOVE_PLAYER
         self.player_vx = 0
         self.player_rect = None
+        self.player_hitbox = None
+        self.playerangle = 0
         
         # Utils
         self.tiles = []
@@ -94,23 +96,37 @@ class Game:
         self.spawncamp_delay = SPAWNCAMP_DELAY  # milliseconds
         self.signal = True
         self.signaltimer = 0
-<<<<<<< HEAD
-        self.music = None
-=======
+        self.music = [None, False]
         self.chased = False
->>>>>>> 94f8bae375a8ddcc118b7e35c69a230afd4570ae
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
 
+    def new_run(self):
+        self.health = 5
+        self.playerspeed = 0
+        self.playerpos = 0
+        self.chased = False
+
+        self.npcs.empty()
+        self.enemies.empty()
+        self.all_sprites.empty()
+
+        self.tiles.clear()
+        self.tile_data.clear()
+        self.weathering.clear()
+        self.tiler.intersection.clear()
+
+        self.bg_tiler_init()
+
     def run(self):
-        self.vlc("menu")
-        self.ui.select_car_menu()
-        self.vlc("theme")
         while self.running:
-<<<<<<< HEAD
-            while 
+            self.music[1] = False
+            self.vlc("menu", -1, False)
+            self.ui.select_car_menu()
+            self.new_run()
             while self.gaming:
+                self.vlc("theme", -1, False)
                 self.dt = self.clock.tick(30) / 1000
                 self.t += self.dt
                 self.events()
@@ -121,22 +137,12 @@ class Game:
                 self.draw()
                 if DEBUG:
                     print(len(self.tiles))
-=======
-            self.dt = self.clock.tick(30) / 1000
-            self.t += self.dt
-            self.events()
-            self.playerinput(self.dt)
-            self.player()
-            self.update()
-            self.bg_tiler()
-            self.draw()
-            print("Chasing is", self.chased)
->>>>>>> 94f8bae375a8ddcc118b7e35c69a230afd4570ae
         print(self.tiles)
 
     def events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                self.gaming = False
                 self.running = False
             if event.type == pygame.KEYDOWN:
                 keys = pygame.key.get_pressed()
@@ -217,12 +223,14 @@ class Game:
         self.all_sprites.draw(self.screen)  
 
         self.player_img.set_alpha(self.player_opacity)
-        angle = self.player_vx * 0.05
-        player_rotated = pygame.transform.rotate(self.player_img, angle + 180)
+        self.playerangle = self.player_vx * 0.05
+        player_rotated = pygame.transform.rotate(self.player_img, self.playerangle + 180)
         rect = player_rotated.get_rect(
             center=(self.player_x, self.player_y)
         )
+        hitbox = rect.inflate(-HITBOX_TOLERANCE, -HITBOX_TOLERANCE)
         self.player_rect = rect
+        self.player_hitbox = hitbox
         self.screen.blit(player_rotated, rect)    
 
         for i in range(self.health):
@@ -350,14 +358,15 @@ class Game:
                 pass
 
         for enemy in self.enemies:
-            if SPACE_ABOVE_PLAYER < enemy.world_y:
-                self.vlc("menu")
-                self.ui.select_car_menu()
+            if SPACE_ABOVE_PLAYER - CATCH_DISTANCE < enemy.world_y:
+                self.gaming = False
                 return
 
         # NPC collision
         for npc in self.npcs:
-            if self.player_rect.colliderect(npc.rect):
+            if not self.player_hitbox:
+                continue
+            if self.player_hitbox.colliderect(npc.hitbox):
                 self.oof()
                 return  # IMPORTANT: prevent double damage same frame
 
@@ -390,14 +399,14 @@ class Game:
         
     def running_red(self, char):
         self.signal, self.signaltimer = self.tiler.signals()
-        if (char == "+" or char == "`") and self.signal:
+        if (char == "+" or char == "`" or char == "%") and self.signal:
             return True
         else:
             return False
         
     def spawn_police(self):
         if self.chased == False:
-            self.chased == True
+            self.chased = True
             popo = Police(
                 self,
                 self.assets.get_image("policecar1"),
@@ -409,7 +418,7 @@ class Game:
             )
             self.enemies.add(popo)
             self.all_sprites.add(popo)
-            self.vlc("police")
+            self.vlc("police", 1, True)
         else:
             pass
                 
@@ -682,17 +691,27 @@ class Game:
         if signalimg:
             self.screen.blit(signalimg, signalrect)
 
-<<<<<<< HEAD
-    def vlc(self, music):
-        if self.music == music:
+    def vlc(self, music, times=-1, overwrite=True):
+        if self.music[0] == music:
             return
-=======
-    def vlc(self, music, times=-1):
->>>>>>> 94f8bae375a8ddcc118b7e35c69a230afd4570ae
-        pygame.mixer.music.load(
-            self.assets.get_music(music)
-        )
-        pygame.mixer.music.play(times)
+        if overwrite == True:
+            self.music[0] = music
+            pygame.mixer.music.load(
+                self.assets.get_music(self.music[0])
+            )
+            pygame.mixer.music.play(times)
+            self.music[1] = True
+        else:
+            if self.music[1] == False:
+                self.music[0] = music
+                pygame.mixer.music.load(
+                    self.assets.get_music(self.music[0])
+                )
+                pygame.mixer.music.play(times)
+                self.music[1] = False
+            else:
+                return
+        
     
     def lane_to_x(self, x_start, lane_index):
         return x_start + lane_index * ROAD_SIZE_X

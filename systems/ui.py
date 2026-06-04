@@ -81,6 +81,7 @@ class Ui:
                             self.game.player_model = chosen_key
                             self.game.player_img = self.game.assets.get_image(chosen_key)
                             self.game.current_car_idx = idx 
+                            self.game.gaming = True
                             selecting = False
                     
                     if exit_btn_rect.collidepoint(click_pos):

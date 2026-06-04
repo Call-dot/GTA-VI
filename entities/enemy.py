@@ -14,15 +14,21 @@ class Police(pygame.sprite.Sprite):
         self.dir = dir
         self.world_x = x
         self.world_y = y
+        self.t = 0
 
 
     def update(self, dt):
-        apparent_speed = self.speed - self.game.playerspeed
+        self.t += dt
+
+        if self.t < 6.7:
+            apparent_speed = 21
+        else:
+            apparent_speed = self.speed - self.game.playerspeed
         
         self.world_y += apparent_speed * dt
-        self.rect.center = (self.world_x, self.world_y)
+        self.rect.center = (self.game.player_x, self.world_y)
 
-        angle = 180 if self.speed > 0 else 0
+        angle = self.game.playerangle + 180
         self.image = pygame.transform.rotate(self.base_image, angle)
 
         # delete when offscreen
