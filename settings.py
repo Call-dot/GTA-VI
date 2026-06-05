@@ -32,6 +32,8 @@ TRAFFIC = 0.02
 
 MIN_LIGHT_TIME = 5
 MAX_LIGHT_TIME = 60
+QUEUE_INTENSITY = 100
+SCHOOL_DISTANCE = 20
 
 CAR_MODELS = [
             {"speed": 85, "control": 70, "lives": 3, "auto_align": 90},

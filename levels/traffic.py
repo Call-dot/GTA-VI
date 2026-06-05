@@ -15,6 +15,7 @@ class Tiler:
         self.signaltimer = 0
         self.game = game
         self.t = self.game.t
+        self.almost_there = False
 
         self.choose_new_road()
 
@@ -34,15 +35,24 @@ class Tiler:
             if not self.intersection:
                 exit_rows = self.exit()
                 print("OG road:", self.current_road["layout"], exit_rows)
-                self.choose_new_road()
-                entrance_rows = self.entrance()
-                print("new road:", self.current_road["layout"], entrance_rows)
-                self.intersecting = True
-                sideroad_size = random.choice([1, 3, 5])
-                print(sideroad_size)
-                self.intersection.extend(exit_rows)
-                self.intersection.extend(self.sideroad(sideroad_size))
-                self.intersection.extend(entrance_rows)
+                if self.almost_there:
+                    self.intersecting = True
+                    sideroad_size = random.choice([1, 3, 5])
+                    self.intersection.extend(exit_rows)
+                    self.intersection.extend(self.sideroad(sideroad_size))
+                    self.intersection.extend("SC+:+CS" for _ in range(5))
+                    self.intersection.append("4C5-,:,-6C3")
+                    self.intersection.extend("SC,:,:,:,CS" for _ in range(10))
+                else:
+                    self.choose_new_road()
+                    entrance_rows = self.entrance()
+                    print("new road:", self.current_road["layout"], entrance_rows)
+                    self.intersecting = True
+                    sideroad_size = random.choice([1, 3, 5])
+                    print(sideroad_size)
+                    self.intersection.extend(exit_rows)
+                    self.intersection.extend(self.sideroad(sideroad_size))
+                    self.intersection.extend(entrance_rows)
 
             print(self.intersection)
             layout = self.intersection.pop(0)
@@ -68,6 +78,11 @@ class Tiler:
         temp_list = list(road[size // 2])
         temp_list[len(temp_list)//2] = '%'
         road[size // 2] = "".join(temp_list)
+        return road
+    
+    def ending(self):
+        queue = self.t // QUEUE_INTENSITY
+        road = ["SC+:+/+:+CS" for _ in range(queue)]
         return road
     
     def entrance(self):

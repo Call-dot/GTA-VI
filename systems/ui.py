@@ -222,6 +222,9 @@ class Ui:
             pygame.display.flip()
             self.game.clock.tick(30)
 
+    def ending(self):
+        print("ending")
+
     def stats_menu(self):
         viewing_stats = True
         title_font = pygame.font.SysFont("Arial", 45, bold=True)

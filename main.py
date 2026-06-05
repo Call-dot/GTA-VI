@@ -128,6 +128,7 @@ class Game:
         self.player_hitbox = None
         self.playerangle = 0
         self.tutorial = True
+        self.tiler.almost_there = False
 
         self.npcs.empty()
         self.enemies.empty()
@@ -259,10 +260,10 @@ class Game:
         self.screen.blit(player_rotated, rect)    
 
         for i in range(self.health):
-            self.screen.blit(self.star_img, (20 + i * 40, 20))
+            self.screen.blit(self.star_img, (WIDTH - (69 + i * 40), 20))
 
         clock_surf = self.fonts["highlight"].render(self.gametime(), True, ("#FEFEFE"))
-        clock_rect = clock_surf.get_rect(topleft=(20, 50))
+        clock_rect = clock_surf.get_rect(topright=(WIDTH-20, 69))
         self.screen.blit(clock_surf, clock_rect)
         half_width = rect.width / 2
         
@@ -575,6 +576,9 @@ class Game:
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
         self.scroll_offset -= self.playerspeed * self.dt
+        if self.playerpos > SCHOOL_DISTANCE:
+            self.tiler.almost_there = True
+
         while self.scroll_offset < 0:
             self.scroll_offset += TILE_SIZE_Y
 
