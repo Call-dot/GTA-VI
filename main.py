@@ -31,12 +31,23 @@ class Game:
         )
         print(SEED)
         self.not_british_driving = NOT_BRITISH_DRIVING
+        self.igt = 0
 
         # Run AssetLoader and save it in self.assets
         self.assets = AssetLoader()
         self.assets.load_images()
         self.assets.load_music()
+        self.assets.load_fonts()
+        self.assets.load_sounds()
         self.ui = Ui(self)
+        self.fonts = {
+            "title": self.assets.get_font("honk"),
+            "subtitle": self.assets.get_font("pixelify"),
+            "header": self.assets.get_font("ops"),
+            "body": self.assets.get_font("bungee"),
+            "highlight": self.assets.get_font("rubik"),
+            "caption": self.assets.get_font("tiny")
+        }
 
         self.car_options = self.assets.car_models
 
@@ -97,7 +108,9 @@ class Game:
         self.signal = True
         self.signaltimer = 0
         self.music = [None, False]
+        self.sound = [None, None]
         self.chased = False
+        self.tutorial = True
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
@@ -107,6 +120,14 @@ class Game:
         self.playerspeed = 0
         self.playerpos = 0
         self.chased = False
+
+        self.player_x = X_CENTRE
+        self.player_y = HEIGHT - SPACE_ABOVE_PLAYER
+        self.player_vx = 0
+        self.player_rect = None
+        self.player_hitbox = None
+        self.playerangle = 0
+        self.tutorial = True
 
         self.npcs.empty()
         self.enemies.empty()
@@ -125,6 +146,7 @@ class Game:
             self.vlc("menu", -1, False)
             self.ui.select_car_menu()
             self.new_run()
+            self.ui.intro_screen()
             while self.gaming:
                 self.vlc("theme", -1, False)
                 self.dt = self.clock.tick(30) / 1000
@@ -145,9 +167,11 @@ class Game:
                 self.gaming = False
                 self.running = False
             if event.type == pygame.KEYDOWN:
+                if self.t > 2:
+                    self.tutorial = False
                 keys = pygame.key.get_pressed()
-                if keys[pygame.K_DOWN]:
-                    self.ts_down = self.dt
+                if keys[pygame.K_ESCAPE]:
+                    self.gaming = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos 
                 print(f"Mouse Clicked at X: {mouse_x}, Y: {mouse_y}")
@@ -212,6 +236,7 @@ class Game:
     def update(self):
         current_road = self.tile_data[self.playerpos]
         traffic_density = current_road["road_type"]["traffic"]
+        self.igt += self.dt
         if random.random() < traffic_density * self.dt * (self.playerspeed / MAX_SPEED + 0.5):
             self.spawn_npc()
         self.all_sprites.update(self.dt)
@@ -236,6 +261,9 @@ class Game:
         for i in range(self.health):
             self.screen.blit(self.star_img, (20 + i * 40, 20))
 
+        clock_surf = self.fonts["highlight"].render(self.gametime(), True, ("#FEFEFE"))
+        clock_rect = clock_surf.get_rect(topleft=(20, 50))
+        self.screen.blit(clock_surf, clock_rect)
         half_width = rect.width / 2
         
         #if self.player_x < half_width:
@@ -265,7 +293,8 @@ class Game:
                     (npc.rect.centerx, npc.rect.centery),
                     1
                 )
-        
+        if self.tutorial:
+            self.show_actions()
         pygame.display.flip()
 
     def spawn_npc(self): #npc = non player car
@@ -711,13 +740,31 @@ class Game:
                 self.music[1] = False
             else:
                 return
+            
+    def sfx(self, sfx, id=None):
+        if self.sound[0] == sfx:
+            return
+        if self.sound[1] == id:
+            return
+        self.sound[0] = sfx
+        self.sound[1] = id
+        self.assets.get_sound(sfx).play()
         
-    
+    def gametime(self):
+        minutes, seconds = divmod(int(self.igt), 60)
+        return f"8:{minutes:02d}:{seconds:02d}am"
+
     def lane_to_x(self, x_start, lane_index):
         return x_start + lane_index * ROAD_SIZE_X
     
     def x_to_lane(self, x, x_start):
         return round((x - x_start) / ROAD_SIZE_X)
+
+    def show_actions(self):
+        tutorial_img = self.assets.get_image("tutorial")
+        tutorial_rect = tutorial_img.get_rect(center=(X_CENTRE, HEIGHT - 200))
+        if self.t % 0.5 < 0.35:
+            self.screen.blit(tutorial_img, tutorial_rect)
 
     def debugger(self, msg):
         print("\n", msg)

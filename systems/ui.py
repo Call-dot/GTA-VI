@@ -1,18 +1,42 @@
 import pygame
 import random
+from systems.asset_loader import AssetLoader
+from settings import *
+
 
 class Ui:
     def __init__(self, game):
         self.game = game
+        self.assets = game.assets
+        self.fonts = {
+            "title": self.assets.get_font("honk"),
+            "subtitle": self.assets.get_font("pixelify"),
+            "header": self.assets.get_font("ops"),
+            "body": self.assets.get_font("bungee"),
+            "highlight": self.assets.get_font("rubik"),
+            "caption": self.assets.get_font("tiny")
+        }
+
+    def intro_screen(self):
+        t = 0
+        pygame.mixer.music.stop()
+        while t < 2:
+            self.game.screen.fill("#1B1B1B")
+            mission_surf1 = self.fonts["body"].render("Somewhere near St. Robert CHS", True, ("#FEFEFE"))
+            mission_rect1 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE-100))
+            mission_surf2 = self.fonts["body"].render("Don't be late for school!", True, ("#FEFEFE"))
+            mission_rect2 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE))
+            self.game.screen.blit(mission_surf1, mission_rect1)
+            self.game.sfx("slap", 1)
+            if t > 1:
+                self.game.sfx("kid_slap", 2)
+                self.game.screen.blit(mission_surf2, mission_rect2)
+            pygame.display.flip()
+            dt = self.game.clock.tick(30) / 1000
+            t += dt
 
     def select_car_menu(self):
         selecting = True
-        font = pygame.font.SysFont("Arial", 40, bold=True)
-        
-        WIDTH = self.game.screen.get_width()
-        HEIGHT = self.game.screen.get_height()
-        X_CENTRE = WIDTH // 2
-        Y_CENTRE = HEIGHT // 2
         
         card_w, card_h = 160, 190  
         spacing_x, spacing_y = 30, 60
@@ -37,7 +61,6 @@ class Ui:
 
         exit_btn_w, exit_btn_h = 160, 50
         exit_btn_rect = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
-        exit_font = pygame.font.SysFont("Arial", 24, bold=True)
         
         stats_btn_w, stats_btn_h = 160, 50
         stats_btn_rect = pygame.Rect(X_CENTRE - stats_btn_w / 2, HEIGHT - 20 - stats_btn_h, stats_btn_w, stats_btn_h)
@@ -48,16 +71,17 @@ class Ui:
         while selecting:
             self.game.screen.fill("#1B1B1B")
             
-            welcome_font = pygame.font.SysFont("Arial", 70, bold=True) 
+            welcome_font = self.fonts["title"]
             welcome_surf = welcome_font.render("WELCOME TO GTA 6", True, (255, 215, 0)) 
             welcome_rect = welcome_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 0.8))
             self.game.screen.blit(welcome_surf, welcome_rect)
             
-            title_surf = font.render("PICK YOUR RIDE", True, (255, 255, 255))
+            header_font = self.fonts["header"]
+            title_surf = header_font.render("PICK YOUR RIDE", True, (255, 255, 255))
             title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 1.5))
             self.game.screen.blit(title_surf, title_rect)
 
-            footer_font = pygame.font.SysFont("Arial", 16, bold=False)
+            footer_font = self.fonts["caption"]
             footer_surf1 = footer_font.render("v1.0.0 Alpha", True, (120, 120, 125)) 
             footer_rect1 = footer_surf1.get_rect(bottomright=(WIDTH - 20, HEIGHT - 20))
             footer_surf2 = footer_font.render("Developed by Aiden, Tristan, and Carey", True, (120, 120, 125))
@@ -127,7 +151,7 @@ class Ui:
                 
             pygame.draw.rect(self.game.screen, exit_bg_color, exit_btn_rect, exit_border_width, border_radius=6)
             
-            exit_text_surf = exit_font.render("EXIT GAME", True, (255, 255, 255))
+            exit_text_surf = self.fonts["highlight"].render("EXIT GAME", True, (255, 255, 255))
             exit_text_rect = exit_text_surf.get_rect(center=exit_btn_rect.center)
             self.game.screen.blit(exit_text_surf, exit_text_rect)
 
