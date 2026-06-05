@@ -260,6 +260,10 @@ class AssetLoader:
             image_dir / "logo.png"
         ).convert_alpha()
 
+        self.images["ghost"] = pygame.image.load(
+            image_dir / "ghost.png"
+        ).convert_alpha()
+
     def load_music(self):
         music_dir = Path("assets/music")
 
