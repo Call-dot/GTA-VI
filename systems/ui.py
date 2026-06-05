@@ -1,18 +1,95 @@
 import pygame
 import random
+#from systems.asset_loader import AssetLoader
+from settings import *
+
 
 class Ui:
     def __init__(self, game):
         self.game = game
+        self.assets = game.assets
+        self.fonts = {
+            "title": self.assets.get_font("honk"),
+            "subtitle": self.assets.get_font("pixelify"),
+            "header": self.assets.get_font("ops"),
+            "body": self.assets.get_font("bungee"),
+            "highlight": self.assets.get_font("rubik"),
+            "caption": self.assets.get_font("tiny")
+        }
+
+    def intro_screen(self):
+        t = 0
+        pygame.mixer.music.stop()
+        while t < 2:
+            self.game.screen.fill("#1B1B1B")
+            mission_surf1 = self.fonts["body"].render("Somewhere near St. Robert CHS", True, ("#FEFEFE"))
+            mission_rect1 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE-100))
+            mission_surf2 = self.fonts["body"].render("Don't be late for school!", True, ("#FEFEFE"))
+            mission_rect2 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE))
+            self.game.screen.blit(mission_surf1, mission_rect1)
+            self.game.sfx("slap", 1)
+            if t > 1:
+                self.game.sfx("kid_slap", 2)
+                self.game.screen.blit(mission_surf2, mission_rect2)
+            pygame.display.flip()
+            dt = self.game.clock.tick(30) / 1000
+            t += dt
+
+    def confirm_exit_popup(self):
+        """Displays a centered 'Are you sure?' confirmation dialog overlay."""
+        confirming = True
+        
+        popup_w, popup_h = 400, 200
+        popup_rect = pygame.Rect(X_CENTRE - popup_w // 2, Y_CENTRE - popup_h // 2, popup_w, popup_h)
+        
+        btn_w, btn_h = 120, 45
+        yes_btn = pygame.Rect(popup_rect.centerx - btn_w - 20, popup_rect.bottom - btn_h - 30, btn_w, btn_h)
+        no_btn = pygame.Rect(popup_rect.centerx + 20, popup_rect.bottom - btn_h - 30, btn_w, btn_h)
+        
+        while confirming:
+            mouse_pos = pygame.mouse.get_pos()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    import sys
+                    sys.exit()
+                    
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if yes_btn.collidepoint(event.pos):
+                        pygame.quit()
+                        import sys
+                        sys.exit()
+                    if no_btn.collidepoint(event.pos):
+                        return False 
+            overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 150))
+            self.game.screen.blit(overlay, (0, 0))
+            
+            pygame.draw.rect(self.game.screen, (34, 47, 62), popup_rect, border_radius=12)
+            pygame.draw.rect(self.game.screen, (255, 215, 0), popup_rect, 3, border_radius=12)
+            
+            msg_surf = self.fonts["highlight"].render("ARE YOU SURE?", True, (255, 255, 255))
+            msg_rect = msg_surf.get_rect(center=(popup_rect.centerx, popup_rect.top + 45))
+            self.game.screen.blit(msg_surf, msg_rect)
+            
+            yes_color = (200, 50, 50) if yes_btn.collidepoint(mouse_pos) else (140, 30, 30)
+            no_color = (100, 110, 120) if no_btn.collidepoint(mouse_pos) else (60, 70, 80)
+            
+            pygame.draw.rect(self.game.screen, yes_color, yes_btn, border_radius=6)
+            pygame.draw.rect(self.game.screen, no_color, no_btn, border_radius=6)
+            
+            yes_surf = self.fonts["body"].render("YES", True, (255, 255, 255))
+            no_surf = self.fonts["body"].render("NO", True, (255, 255, 255))
+            
+            self.game.screen.blit(yes_surf, yes_surf.get_rect(center=yes_btn.center))
+            self.game.screen.blit(no_surf, no_surf.get_rect(center=no_btn.center))
+            
+            pygame.display.flip()
+            self.game.clock.tick(30)
 
     def select_car_menu(self):
         selecting = True
-        font = pygame.font.SysFont("Arial", 40, bold=True)
-        
-        WIDTH = self.game.screen.get_width()
-        HEIGHT = self.game.screen.get_height()
-        X_CENTRE = WIDTH // 2
-        Y_CENTRE = HEIGHT // 2
         
         card_w, card_h = 160, 190  
         spacing_x, spacing_y = 30, 60
@@ -37,7 +114,6 @@ class Ui:
 
         exit_btn_w, exit_btn_h = 160, 50
         exit_btn_rect = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
-        exit_font = pygame.font.SysFont("Arial", 24, bold=True)
         
         stats_btn_w, stats_btn_h = 160, 50
         stats_btn_rect = pygame.Rect(X_CENTRE - stats_btn_w / 2, HEIGHT - 20 - stats_btn_h, stats_btn_w, stats_btn_h)
@@ -48,16 +124,17 @@ class Ui:
         while selecting:
             self.game.screen.fill("#1B1B1B")
             
-            welcome_font = pygame.font.SysFont("Arial", 70, bold=True) 
+            welcome_font = self.fonts["title"]
             welcome_surf = welcome_font.render("WELCOME TO GTA 6", True, (255, 215, 0)) 
             welcome_rect = welcome_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 0.8))
             self.game.screen.blit(welcome_surf, welcome_rect)
             
-            title_surf = font.render("PICK YOUR RIDE", True, (255, 255, 255))
+            header_font = self.fonts["header"]
+            title_surf = header_font.render("PICK YOUR RIDE", True, (255, 255, 255))
             title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 1.5))
             self.game.screen.blit(title_surf, title_rect)
 
-            footer_font = pygame.font.SysFont("Arial", 16, bold=False)
+            footer_font = self.fonts["caption"]
             footer_surf1 = footer_font.render("v1.0.0 Alpha", True, (120, 120, 125)) 
             footer_rect1 = footer_surf1.get_rect(bottomright=(WIDTH - 20, HEIGHT - 20))
             footer_surf2 = footer_font.render("Developed by Aiden, Tristan, and Carey", True, (120, 120, 125))
@@ -81,12 +158,11 @@ class Ui:
                             self.game.player_model = chosen_key
                             self.game.player_img = self.game.assets.get_image(chosen_key)
                             self.game.current_car_idx = idx 
+                            self.game.gaming = True
                             selecting = False
                     
                     if exit_btn_rect.collidepoint(click_pos):
-                        pygame.quit()
-                        import sys
-                        sys.exit()
+                        self.confirm_exit_popup()
                         
                     if stats_btn_rect.collidepoint(click_pos):
                         hovered_idx = 0
@@ -126,7 +202,7 @@ class Ui:
                 
             pygame.draw.rect(self.game.screen, exit_bg_color, exit_btn_rect, exit_border_width, border_radius=6)
             
-            exit_text_surf = exit_font.render("EXIT GAME", True, (255, 255, 255))
+            exit_text_surf = self.fonts["highlight"].render("EXIT GAME", True, (255, 255, 255))
             exit_text_rect = exit_text_surf.get_rect(center=exit_btn_rect.center)
             self.game.screen.blit(exit_text_surf, exit_text_rect)
 
@@ -203,9 +279,9 @@ class Ui:
             car_stats = getattr(self.game, 'car_stats_database', {}).get(car_key, {"speed": 50, "control": 50, "lives": 3, "auto_align": 50})
             
             stat_rows = [
-                {"label": "Speed",      "val": car_stats["speed"],      "max": 100, "color": (231, 76, 60)},
-                {"label": "Control",    "val": car_stats["control"],    "max": 100, "color": (52, 152, 219)},
-                {"label": "Lives",      "val": car_stats["lives"],      "max": 5,   "color": (46, 204, 113)},
+                {"label": "Speed",      "val": car_stats["speed"],      "max": 100, "color": (231, 76, 60),  "type": "bar"},
+                {"label": "Control",    "val": car_stats["control"],    "max": 100, "color": (52, 152, 219), "type": "bar"},
+                {"label": "Lives",      "val": car_stats["lives"],      "max": 5,   "color": (46, 204, 113), "type": "stars"},
             ]
 
             title_surf = title_font.render("VEHICLE REPOSITORY STATS", True, (255, 215, 0))
@@ -245,16 +321,28 @@ class Ui:
                 lbl = label_font.render(row["label"], True, (255, 255, 255))
                 self.game.screen.blit(lbl, (stats_x, curr_y))
                 
-                val_str = f"{row['val']}/{row['max']}" if row['label'] != "Lives" else f"{row['val']} HP"
+                val_str = f"{row['val']}/{row['max']}" if row['type'] != "stars" else f"{row['val']} HP"
                 val_surf = value_font.render(val_str, True, (200, 200, 200))
                 self.game.screen.blit(val_surf, (stats_x + bar_max_w - val_surf.get_width(), curr_y + 4))
                 
-                track = pygame.Rect(stats_x, curr_y + 36, bar_max_w, bar_h)
-                pygame.draw.rect(self.game.screen, (30, 39, 46), track, border_radius=6)
-                
-                fill_w = int(bar_max_w * (row["val"] / row["max"]))
-                fill_rect = pygame.Rect(stats_x, curr_y + 36, fill_w, bar_h)
-                pygame.draw.rect(self.game.screen, row["color"], fill_rect, border_radius=6)
+                if row["type"] == "bar":
+                    track = pygame.Rect(stats_x, curr_y + 36, bar_max_w, bar_h)
+                    pygame.draw.rect(self.game.screen, (30, 39, 46), track, border_radius=6)
+                    
+                    fill_w = int(bar_max_w * (row["val"] / row["max"]))
+                    fill_rect = pygame.Rect(stats_x, curr_y + 36, fill_w, bar_h)
+                    pygame.draw.rect(self.game.screen, row["color"], fill_rect, border_radius=6)
+                    
+                elif row["type"] == "stars":
+                    star_img = self.game.assets.get_image('star')
+                    
+                    star_img = pygame.transform.scale(star_img, (45, 45))
+                    
+                    star_spacing = 40
+                    for star_idx in range(row["val"]):
+                        sx = stats_x + (star_idx * star_spacing)
+                        sy = curr_y + 34
+                        self.game.screen.blit(star_img, (sx, sy))
 
             align_y = stats_y + (3 * row_gap)
             

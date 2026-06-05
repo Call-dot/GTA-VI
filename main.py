@@ -6,6 +6,7 @@ from levels.traffic import Tiler
 from levels.biomes import BIOMES
 from levels.roads import ROAD_TYPES
 from entities.npc import Npc
+from entities.enemy import Police
 from systems.ui import Ui
 
 class Game:
@@ -15,11 +16,13 @@ class Game:
         self.clock = pygame.time.Clock()
         self.t = 0
         self.running = True
+        self.gaming = False
         self.width = WIDTH
         self.height = HEIGHT
         self.space_above_player = SPACE_ABOVE_PLAYER
         self.all_sprites = pygame.sprite.Group()
         self.npcs = pygame.sprite.Group()
+        self.enemies = pygame.sprite.Group()
         random.seed(SEED)
         self.tiler = Tiler(
             self,
@@ -28,12 +31,23 @@ class Game:
         )
         print(SEED)
         self.not_british_driving = NOT_BRITISH_DRIVING
+        self.igt = 0
 
         # Run AssetLoader and save it in self.assets
         self.assets = AssetLoader()
         self.assets.load_images()
         self.assets.load_music()
+        self.assets.load_fonts()
+        self.assets.load_sounds()
         self.ui = Ui(self)
+        self.fonts = {
+            "title": self.assets.get_font("honk"),
+            "subtitle": self.assets.get_font("pixelify"),
+            "header": self.assets.get_font("ops"),
+            "body": self.assets.get_font("bungee"),
+            "highlight": self.assets.get_font("rubik"),
+            "caption": self.assets.get_font("tiny")
+        }
 
         self.car_options = self.assets.car_models
 
@@ -68,6 +82,9 @@ class Game:
         self.player_x = X_CENTRE
         self.player_y = HEIGHT - SPACE_ABOVE_PLAYER
         self.player_vx = 0
+        self.player_rect = None
+        self.player_hitbox = None
+        self.playerangle = 0
         
         # Utils
         self.tiles = []
@@ -90,35 +107,71 @@ class Game:
         self.spawncamp_delay = SPAWNCAMP_DELAY  # milliseconds
         self.signal = True
         self.signaltimer = 0
+        self.music = [None, False]
+        self.sound = [None, None]
+        self.chased = False
+        self.tutorial = True
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
 
+    def new_run(self):
+        self.health = 5
+        self.playerspeed = 0
+        self.playerpos = 0
+        self.chased = False
+
+        self.player_x = X_CENTRE
+        self.player_y = HEIGHT - SPACE_ABOVE_PLAYER
+        self.player_vx = 0
+        self.player_rect = None
+        self.player_hitbox = None
+        self.playerangle = 0
+        self.tutorial = True
+
+        self.npcs.empty()
+        self.enemies.empty()
+        self.all_sprites.empty()
+
+        self.tiles.clear()
+        self.tile_data.clear()
+        self.weathering.clear()
+        self.tiler.intersection.clear()
+
+        self.bg_tiler_init()
+
     def run(self):
-        self.vlc("menu")
-        self.ui.select_car_menu()
-        self.vlc("theme")
         while self.running:
-            self.dt = self.clock.tick(30) / 1000
-            self.t += self.dt
-            self.events()
-            self.playerinput(self.dt)
-            self.player()
-            self.update()
-            self.bg_tiler()
-            self.draw()
-            if DEBUG:
-                print(len(self.tiles))
+            self.music[1] = False
+            self.vlc("menu", -1, False)
+            self.ui.select_car_menu()
+            self.new_run()
+            self.ui.intro_screen()
+            while self.gaming:
+                self.vlc("theme", -1, False)
+                self.dt = self.clock.tick(30) / 1000
+                self.t += self.dt
+                self.events()
+                self.playerinput(self.dt)
+                self.player()
+                self.update()
+                self.bg_tiler()
+                self.draw()
+                if DEBUG:
+                    print(len(self.tiles))
         print(self.tiles)
 
     def events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                self.gaming = False
                 self.running = False
             if event.type == pygame.KEYDOWN:
+                if self.t > 2:
+                    self.tutorial = False
                 keys = pygame.key.get_pressed()
-                if keys[pygame.K_DOWN]:
-                    self.ts_down = self.dt
+                if keys[pygame.K_ESCAPE]:
+                    self.gaming = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos 
                 print(f"Mouse Clicked at X: {mouse_x}, Y: {mouse_y}")
@@ -183,6 +236,7 @@ class Game:
     def update(self):
         current_road = self.tile_data[self.playerpos]
         traffic_density = current_road["road_type"]["traffic"]
+        self.igt += self.dt
         if random.random() < traffic_density * self.dt * (self.playerspeed / MAX_SPEED + 0.5):
             self.spawn_npc()
         self.all_sprites.update(self.dt)
@@ -194,17 +248,22 @@ class Game:
         self.all_sprites.draw(self.screen)  
 
         self.player_img.set_alpha(self.player_opacity)
-        angle = self.player_vx * 0.05
-        player_rotated = pygame.transform.rotate(self.player_img, angle + 180)
+        self.playerangle = self.player_vx * 0.05
+        player_rotated = pygame.transform.rotate(self.player_img, self.playerangle + 180)
         rect = player_rotated.get_rect(
             center=(self.player_x, self.player_y)
         )
+        hitbox = rect.inflate(-HITBOX_TOLERANCE, -HITBOX_TOLERANCE)
         self.player_rect = rect
+        self.player_hitbox = hitbox
         self.screen.blit(player_rotated, rect)    
 
         for i in range(self.health):
             self.screen.blit(self.star_img, (20 + i * 40, 20))
 
+        clock_surf = self.fonts["highlight"].render(self.gametime(), True, ("#FEFEFE"))
+        clock_rect = clock_surf.get_rect(topleft=(20, 50))
+        self.screen.blit(clock_surf, clock_rect)
         half_width = rect.width / 2
         
         #if self.player_x < half_width:
@@ -234,7 +293,8 @@ class Game:
                     (npc.rect.centerx, npc.rect.centery),
                     1
                 )
-        
+        if self.tutorial:
+            self.show_actions()
         pygame.display.flip()
 
     def spawn_npc(self): #npc = non player car
@@ -319,11 +379,23 @@ class Game:
 
         print(char, self.running_red(char), self.tiler.signals(), self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"])
         if self.running_red(char):
-            print("[!!!POLICE SIREN SOUNDS!!!]")
+            if self.chased == False:
+                print("[!!!POLICE SIREN SOUNDS!!!]")
+                self.spawn_police()
+                self.chased = True
+            else:
+                pass
+
+        for enemy in self.enemies:
+            if SPACE_ABOVE_PLAYER - CATCH_DISTANCE < enemy.world_y:
+                self.gaming = False
+                return
 
         # NPC collision
         for npc in self.npcs:
-            if self.player_rect.colliderect(npc.rect):
+            if not self.player_hitbox:
+                continue
+            if self.player_hitbox.colliderect(npc.hitbox):
                 self.oof()
                 return  # IMPORTANT: prevent double damage same frame
 
@@ -346,7 +418,7 @@ class Game:
         self.flash_timer = now
 
         if self.health <= 0:
-            print("GAME OVER")
+            print("game over")
 
     def out_of_bounds(self, char):
         if char == "OOB" or char == "S":
@@ -356,11 +428,30 @@ class Game:
         
     def running_red(self, char):
         self.signal, self.signaltimer = self.tiler.signals()
-        if (char == "+" or char == "`") and self.signal:
+        if (char == "+" or char == "`" or char == "%") and self.signal:
             return True
         else:
             return False
-    
+        
+    def spawn_police(self):
+        if self.chased == False:
+            self.chased = True
+            popo = Police(
+                self,
+                self.assets.get_image("policecar1"),
+                X_CENTRE,
+                -100,
+                MAX_SPEED // 0.8,
+                0,
+                "down"
+            )
+            self.enemies.add(popo)
+            self.all_sprites.add(popo)
+            self.vlc("police", 1, True)
+        else:
+            pass
+                
+            
     def on_road(self):
         row = self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"]
         print(row)
@@ -629,17 +720,51 @@ class Game:
         if signalimg:
             self.screen.blit(signalimg, signalrect)
 
-    def vlc(self, music):
-        pygame.mixer.music.load(
-            self.assets.get_music(music)
-        )
-        pygame.mixer.music.play(-1)
-    
+    def vlc(self, music, times=-1, overwrite=True):
+        if self.music[0] == music:
+            return
+        if overwrite == True:
+            self.music[0] = music
+            pygame.mixer.music.load(
+                self.assets.get_music(self.music[0])
+            )
+            pygame.mixer.music.play(times)
+            self.music[1] = True
+        else:
+            if self.music[1] == False:
+                self.music[0] = music
+                pygame.mixer.music.load(
+                    self.assets.get_music(self.music[0])
+                )
+                pygame.mixer.music.play(times)
+                self.music[1] = False
+            else:
+                return
+            
+    def sfx(self, sfx, id=None):
+        if self.sound[0] == sfx:
+            return
+        if self.sound[1] == id:
+            return
+        self.sound[0] = sfx
+        self.sound[1] = id
+        self.assets.get_sound(sfx).play()
+        
+    def gametime(self):
+        minutes, seconds = divmod(int(self.igt), 60)
+        return f"8:{minutes:02d}:{seconds:02d}am"
+
     def lane_to_x(self, x_start, lane_index):
         return x_start + lane_index * ROAD_SIZE_X
     
     def x_to_lane(self, x, x_start):
         return round((x - x_start) / ROAD_SIZE_X)
+
+    def show_actions(self):
+        tutorial_img = self.assets.get_image("tutorial")
+        tutorial_rect = tutorial_img.get_rect(center=(X_CENTRE, HEIGHT - 200))
+        if self.t % 0.5 < 0.35:
+            self.screen.blit(tutorial_img, tutorial_rect)
 
     def debugger(self, msg):
         print("\n", msg)

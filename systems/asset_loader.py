@@ -4,9 +4,54 @@ from pathlib import Path
 
 class AssetLoader:
     def __init__(self):
+        self.fonts = {}
         self.images = {}
         self.music = {}
+        self.sound = {}
         self.car_models = ["red_car", "pink_car", "babyblue_car", "camo_car", "darkblue_car", "name_car", "orange_car", "black_car", "lime_car"]
+
+    def load_fonts(self):
+        font_dir = Path("assets/fonts")
+
+        self.fonts["honk"] = pygame.font.Font(
+            font_dir / "Honk-Regular-VariableFont_MORF,SHLN.ttf", 50
+        )
+
+        self.fonts["ops"] = pygame.font.Font(
+            font_dir / "BlackOpsOne-Regular.ttf", 24
+        )
+
+        self.fonts["rubik"] = pygame.font.Font(
+            font_dir / "RubikMonoOne-Regular.ttf", 24
+        )
+
+        self.fonts["bungee"] = pygame.font.Font(
+            font_dir / "Bungee-Regular.ttf", 24
+        )
+
+        self.fonts["tiny"] = pygame.font.Font(
+            font_dir / "Bungee-Regular.ttf", 10
+        )
+
+        self.fonts["bungeeshade"] = pygame.font.Font(
+            font_dir / "BungeeShade-Regular.ttf", 50
+        )
+
+        self.fonts["pixelify"] = pygame.font.Font(
+            font_dir / "PixelifySans-Regular.ttf", 50
+        )
+
+        self.fonts["pixelify_medium"] = pygame.font.Font(
+            font_dir / "PixelifySans-Medium.ttf", 50
+        )
+
+        self.fonts["pixelify_bold"] = pygame.font.Font(
+            font_dir / "PixelifySans-Bold.ttf", 50
+        )
+
+        self.fonts["pixelify_semibold"] = pygame.font.Font(
+            font_dir / "PixelifySans-SemiBold.ttf", 50
+        )
 
     def load_images(self):
         image_dir = Path("assets/images")
@@ -147,6 +192,10 @@ class AssetLoader:
             image_dir / "G_light.png"
         ).convert_alpha()
 
+        self.images["tutorial"] = pygame.image.load(
+            image_dir / "tutorial.png"
+        ).convert_alpha()
+
         def load_car(model):
             self.images[model] = pygame.image.load(
                 image_dir / f"{model}.png"
@@ -216,12 +265,30 @@ class AssetLoader:
 
         self.music["theme"] = music_dir / "GTA6_theme_song.mp3"
         self.music["menu"] = music_dir / "menumusic.wav"
+        self.music["police"] = music_dir / "guardian_theme.mp3"
+
+    def load_sounds(self):
+        sound_dir = Path("assets/sounds")
+
+        self.sound["slap"] = pygame.mixer.Sound(
+            sound_dir / "slap.mp3"
+        )
+
+        self.sound["kid_slap"] = pygame.mixer.Sound(
+            sound_dir / "kid-slap-oh.mp3"
+        )
+
+    def get_font(self, name):
+        return self.fonts[name]
 
     def get_image(self, name):
         return self.images[name]
 
     def get_music(self, name):
         return self.music[name]
+    
+    def get_sound(self, name):
+        return self.sound[name]
 
     def get_random_car(self, player=None):
         name = ""

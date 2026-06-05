@@ -1,57 +1,36 @@
+# npc = non player car
 import pygame
-from settings import *
 
-class Enemy(pygame.sprite.Sprite):
-    def __init__(self, game, x, y, image):
+class Police(pygame.sprite.Sprite):
+    def __init__(self, game, image, x, y, speed, lane_index, dir):
         super().__init__()
 
         self.game = game
-        self.image_original = image
         self.image = image
+        self.base_image = image
         self.rect = self.image.get_rect(center=(x, y))
+        self.speed = speed
+        self.lane_index = lane_index
+        self.dir = dir
+        self.world_x = x
+        self.world_y = y
+        self.t = 0
 
-        self.x = x
-        self.y = y
-
-        self.speed = 250
-        self.turn_speed = 4
-        self.vx = 0
 
     def update(self, dt):
-        self.chase_player(dt)
+        self.t += dt
 
-        #move vertically
-        self.y += (self.speed - self.game.playerspeed) * dt
+        if self.t < 6.7:
+            apparent_speed = 21
+        else:
+            apparent_speed = self.speed - self.game.playerspeed
+        
+        self.world_y += apparent_speed * dt
+        self.rect.center = (self.game.player_x, self.world_y)
 
-        #move horizontally
-        self.x += self.vx * dt
+        angle = self.game.playerangle + 180
+        self.image = pygame.transform.rotate(self.base_image, angle)
 
-        #update
-        self.rect.center = (self.x, self.y)
-
-        #rotate turning
-        angle = -self.vx * 0.05
-
-        self.image = pygame.transform.rotate(
-            self.image_original,
-            angle + 180
-        )
-
-        self.rect = self.image.get_rect(
-            center=self.rect.center
-        )
-
-        #Delete enemy off screen
-        if self.y > self.game.height + 200:
+        # delete when offscreen
+        if self.rect.top > self.game.height + 169:
             self.kill()
-
-    def chase_player(self, dt):
-        player_x = self.game.player_x
-
-        #D to player
-        direction = player_x - self.x
-
-        self.vx += direction * self.turn_speed * dt
-
-        #speed limit
-        self.vx = max(-250, min(250, self.vx))
