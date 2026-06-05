@@ -1,6 +1,6 @@
 import pygame
 import random
-from systems.asset_loader import AssetLoader
+#from systems.asset_loader import AssetLoader
 from settings import *
 
 
@@ -34,6 +34,59 @@ class Ui:
             pygame.display.flip()
             dt = self.game.clock.tick(30) / 1000
             t += dt
+
+    def confirm_exit_popup(self):
+        """Displays a centered 'Are you sure?' confirmation dialog overlay."""
+        confirming = True
+        
+        popup_w, popup_h = 400, 200
+        popup_rect = pygame.Rect(X_CENTRE - popup_w // 2, Y_CENTRE - popup_h // 2, popup_w, popup_h)
+        
+        btn_w, btn_h = 120, 45
+        yes_btn = pygame.Rect(popup_rect.centerx - btn_w - 20, popup_rect.bottom - btn_h - 30, btn_w, btn_h)
+        no_btn = pygame.Rect(popup_rect.centerx + 20, popup_rect.bottom - btn_h - 30, btn_w, btn_h)
+        
+        while confirming:
+            mouse_pos = pygame.mouse.get_pos()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    import sys
+                    sys.exit()
+                    
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if yes_btn.collidepoint(event.pos):
+                        pygame.quit()
+                        import sys
+                        sys.exit()
+                    if no_btn.collidepoint(event.pos):
+                        return False 
+            overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 150))
+            self.game.screen.blit(overlay, (0, 0))
+            
+            pygame.draw.rect(self.game.screen, (34, 47, 62), popup_rect, border_radius=12)
+            pygame.draw.rect(self.game.screen, (255, 215, 0), popup_rect, 3, border_radius=12)
+            
+            msg_surf = self.fonts["highlight"].render("ARE YOU SURE?", True, (255, 255, 255))
+            msg_rect = msg_surf.get_rect(center=(popup_rect.centerx, popup_rect.top + 45))
+            self.game.screen.blit(msg_surf, msg_rect)
+            
+            yes_color = (200, 50, 50) if yes_btn.collidepoint(mouse_pos) else (140, 30, 30)
+            no_color = (100, 110, 120) if no_btn.collidepoint(mouse_pos) else (60, 70, 80)
+            
+            pygame.draw.rect(self.game.screen, yes_color, yes_btn, border_radius=6)
+            pygame.draw.rect(self.game.screen, no_color, no_btn, border_radius=6)
+            
+            yes_surf = self.fonts["body"].render("YES", True, (255, 255, 255))
+            no_surf = self.fonts["body"].render("NO", True, (255, 255, 255))
+            
+            self.game.screen.blit(yes_surf, yes_surf.get_rect(center=yes_btn.center))
+            self.game.screen.blit(no_surf, no_surf.get_rect(center=no_btn.center))
+            
+            pygame.display.flip()
+            self.game.clock.tick(30)
 
     def select_car_menu(self):
         selecting = True
@@ -109,9 +162,7 @@ class Ui:
                             selecting = False
                     
                     if exit_btn_rect.collidepoint(click_pos):
-                        pygame.quit()
-                        import sys
-                        sys.exit()
+                        self.confirm_exit_popup()
                         
                     if stats_btn_rect.collidepoint(click_pos):
                         hovered_idx = 0
