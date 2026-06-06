@@ -77,8 +77,7 @@ class Ui:
             dt = self.game.clock.tick(30) / 1000
             t += dt
 
-
-    def confirm_exit_popup(self):
+    def confirm_exit_popup(self, draw_background_callback=None):
         """Displays a centered 'Are you sure?' confirmation dialog overlay."""
         confirming = True
         
@@ -105,6 +104,14 @@ class Ui:
                         sys.exit()
                     if no_btn.collidepoint(event.pos):
                         return False 
+
+            # Redraw selection menu layout first so background isn't black
+            if draw_background_callback:
+                draw_background_callback()
+            else:
+                self.game.screen.fill("#1B1B1B")
+
+            # Layer translucent dimming panel over background menu layout
             overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 150))
             self.game.screen.blit(overlay, (0, 0))
@@ -161,31 +168,64 @@ class Ui:
         stats_btn_w, stats_btn_h = 160, 50
         stats_btn_rect = pygame.Rect(X_CENTRE - stats_btn_w / 2, HEIGHT - 20 - stats_btn_h, stats_btn_w, stats_btn_h)
         stats_font = pygame.font.SysFont("Arial", 24, bold=True)
-        
         car_name_font = pygame.font.SysFont("Arial", 18, bold=True)
 
-        while selecting:
+        # Helper method used to redraw UI layout frames seamlessly when nested loops pause
+        def draw_everything():
             self.game.screen.fill("#1B1B1B")
             
-            welcome_font = self.fonts["title"]
-            welcome_surf = welcome_font.render("WELCOME TO GTA 6", True, (255, 215, 0)) 
+            welcome_surf = self.fonts["title"].render("WELCOME TO GTA 6", True, (255, 215, 0)) 
             welcome_rect = welcome_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 0.8))
             self.game.screen.blit(welcome_surf, welcome_rect)
             
-            header_font = self.fonts["header"]
-            title_surf = header_font.render("PICK YOUR RIDE", True, (255, 255, 255))
+            title_surf = self.fonts["header"].render("PICK YOUR RIDE", True, (255, 255, 255))
             title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 1.5))
             self.game.screen.blit(title_surf, title_rect)
 
-            footer_font = self.fonts["caption"]
-            footer_surf1 = footer_font.render("v1.0.0 Alpha", True, (120, 120, 125)) 
+            footer_surf1 = self.fonts["caption"].render("v1.0.0 Alpha", True, (120, 120, 125)) 
             footer_rect1 = footer_surf1.get_rect(bottomright=(WIDTH - 20, HEIGHT - 20))
-            footer_surf2 = footer_font.render("Developed by Aiden, Tristan, and Carey", True, (120, 120, 125))
+            footer_surf2 = self.fonts["caption"].render("Developed by Aiden, Tristan, and Carey", True, (120, 120, 125))
             footer_rect2 = footer_surf2.get_rect(bottomright=footer_rect1.topright)
             self.game.screen.blit(footer_surf1, footer_rect1)
             self.game.screen.blit(footer_surf2, footer_rect2)
 
-            mouse_pos = pygame.mouse.get_pos()
+            curr_mouse = pygame.mouse.get_pos()
+
+            # Render Choice Cards
+            for idx, rect in enumerate(rects):
+                if rect.collidepoint(curr_mouse):
+                    color, border = (0, 200, 100), 5
+                else:
+                    color, border = (180, 180, 180), 2
+                
+                pygame.draw.rect(self.game.screen, color, rect, border, border_radius=12)
+                car_surface = self.game.assets.get_image(self.game.car_options[idx])
+                car_rect = car_surface.get_rect(center=(rect.centerx, rect.centery - 15))
+                self.game.screen.blit(car_surface, car_rect)
+                
+                clean_name = self.game.car_options[idx].replace("_", " ").title()
+                name_surf = car_name_font.render(clean_name, True, (255, 255, 255))
+                name_rect = name_surf.get_rect(center=(rect.centerx, rect.bottom - 20))
+                self.game.screen.blit(name_surf, name_rect)
+
+            # Exit Game Button Layout
+            exit_bg_color = (130, 20, 20) if exit_btn_rect.collidepoint(curr_mouse) else (200, 50, 50)
+            exit_border_width = 0 if exit_btn_rect.collidepoint(curr_mouse) else 2
+            pygame.draw.rect(self.game.screen, exit_bg_color, exit_btn_rect, exit_border_width, border_radius=6)
+            
+            exit_text_surf = self.fonts["highlight"].render("EXIT GAME", True, (255, 255, 255))
+            self.game.screen.blit(exit_text_surf, exit_text_surf.get_rect(center=exit_btn_rect.center))
+
+            # Stats Button Layout
+            stats_bg_color = (20, 100, 130) if stats_btn_rect.collidepoint(curr_mouse) else (50, 150, 200)
+            stats_border_width = 0 if stats_btn_rect.collidepoint(curr_mouse) else 2
+            pygame.draw.rect(self.game.screen, stats_bg_color, stats_btn_rect, stats_border_width, border_radius=6)
+            
+            stats_text_surf = stats_font.render("STATS", True, (255, 255, 255))
+            self.game.screen.blit(stats_text_surf, stats_text_surf.get_rect(center=stats_btn_rect.center))
+
+        while selecting:
+            draw_everything()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -203,64 +243,17 @@ class Ui:
                             self.game.current_car_idx = idx 
                             self.game.gaming = True
                             selecting = False
-                    
+                            
                     if exit_btn_rect.collidepoint(click_pos):
-                        self.confirm_exit_popup()
+                        self.confirm_exit_popup(draw_background_callback=draw_everything)
                         
                     if stats_btn_rect.collidepoint(click_pos):
                         hovered_idx = 0
                         for idx, rect in enumerate(rects):
-                            if rect.collidepoint(mouse_pos):
+                            if rect.collidepoint(pygame.mouse.get_pos()):
                                 hovered_idx = idx
                         self.game.current_car_idx = hovered_idx
                         self.stats_menu()
-            
-            for idx, rect in enumerate(rects):
-                if rect.collidepoint(mouse_pos):
-                    color = (0, 200, 100)
-                    border = 5
-                else:
-                    color = (180, 180, 180)
-                    border = 2
-                
-                pygame.draw.rect(self.game.screen, color, rect, border, border_radius=12)
-                
-                car_surface = self.game.assets.get_image(self.game.car_options[idx])
-                car_rect = car_surface.get_rect(center=(rect.centerx, rect.centery - 15))
-                self.game.screen.blit(car_surface, car_rect)
-                
-                raw_name = self.game.car_options[idx]
-                clean_name = raw_name.replace("_", " ").title()
-                
-                name_surf = car_name_font.render(clean_name, True, (255, 255, 255))
-                name_rect = name_surf.get_rect(center=(rect.centerx, rect.bottom - 20))
-                self.game.screen.blit(name_surf, name_rect)
-
-            if exit_btn_rect.collidepoint(mouse_pos):
-                exit_bg_color = (130, 20, 20)
-                exit_border_width = 0
-            else:
-                exit_bg_color = (200, 50, 50)
-                exit_border_width = 2
-                
-            pygame.draw.rect(self.game.screen, exit_bg_color, exit_btn_rect, exit_border_width, border_radius=6)
-            
-            exit_text_surf = self.fonts["highlight"].render("EXIT GAME", True, (255, 255, 255))
-            exit_text_rect = exit_text_surf.get_rect(center=exit_btn_rect.center)
-            self.game.screen.blit(exit_text_surf, exit_text_rect)
-
-            if stats_btn_rect.collidepoint(mouse_pos):
-                stats_bg_color = (20, 100, 130)
-                stats_border_width = 0
-            else:
-                stats_bg_color = (50, 150, 200)
-                stats_border_width = 2
-                
-            pygame.draw.rect(self.game.screen, stats_bg_color, stats_btn_rect, stats_border_width, border_radius=6)
-            
-            stats_text_surf = stats_font.render("STATS", True, (255, 255, 255))
-            stats_text_rect = stats_text_surf.get_rect(center=stats_btn_rect.center)
-            self.game.screen.blit(stats_text_surf, stats_text_rect)
 
             pygame.display.flip()
             self.game.clock.tick(30)
@@ -381,7 +374,6 @@ class Ui:
                     
                 elif row["type"] == "stars":
                     star_img = self.game.assets.get_image('star')
-                    
                     star_img = pygame.transform.scale(star_img, (45, 45))
                     
                     star_spacing = 40
