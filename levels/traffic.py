@@ -17,9 +17,14 @@ class Tiler:
         self.t = self.game.t
         self.almost_there = False
 
+
         self.choose_new_road()
 
     def choose_new_road(self):
+        if self.almost_there:
+            self.rows_remaining = 0
+            return
+        
         road_names = list(ROAD_TYPES.keys())
 
         weights = [ROAD_TYPES[name]["weight"] for name in road_names]
@@ -38,11 +43,17 @@ class Tiler:
                 if self.almost_there:
                     self.intersecting = True
                     sideroad_size = random.choice([1, 3, 5])
+
                     self.intersection.extend(exit_rows)
                     self.intersection.extend(self.sideroad(sideroad_size))
-                    self.intersection.extend("SC+:+CS" for _ in range(5))
-                    self.intersection.append("4C5-,:,-6C3")
-                    self.intersection.extend("SC,:,:,:,CS" for _ in range(10))
+                    self.intersection.extend(self.ending())
+
+                    if self.game.ending is None:
+                        self.game.ending = (
+                            len(self.game.tiles)
+                            + len(self.intersection)
+                            + END_THRESHOLD
+                        )
                 else:
                     self.choose_new_road()
                     entrance_rows = self.entrance()
@@ -81,8 +92,13 @@ class Tiler:
         return road
     
     def ending(self):
-        queue = self.t // QUEUE_INTENSITY
-        road = ["SC+:+/+:+CS" for _ in range(queue)]
+        road = []
+        road.append("3-.:.-4")
+        road.extend("SC+:+CS" for _ in range(5))
+        road.append("4C5-,:,-6C3")
+        road.extend("SC,:,:,:,CS" for _ in range(5))
+        road.append("__SC,:,:,:,CS_@")
+        road.extend("SC,:,:,:,CS" for _ in range(25))
         return road
     
     def entrance(self):

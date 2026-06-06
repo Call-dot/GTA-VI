@@ -20,20 +20,63 @@ class Ui:
     def intro_screen(self):
         t = 0
         pygame.mixer.music.stop()
-        while t < 2:
+        while t < 3:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    import sys
+                    sys.exit()
             self.game.screen.fill("#1B1B1B")
             mission_surf1 = self.fonts["body"].render("Somewhere near St. Robert CHS", True, ("#FEFEFE"))
             mission_rect1 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE-100))
             mission_surf2 = self.fonts["body"].render("Don't be late for school!", True, ("#FEFEFE"))
-            mission_rect2 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE))
+            mission_rect2 = mission_surf2.get_rect(center=(X_CENTRE, Y_CENTRE))
+            clock_surf = self.fonts["highlight"].render(self.game.gametime(), True, ("#FEFEFE"))
+            clock_rect = clock_surf.get_rect(center=(X_CENTRE, Y_CENTRE+100))
             self.game.screen.blit(mission_surf1, mission_rect1)
-            self.game.sfx("slap", 1)
+            if t < 1:
+                self.game.sfx("slap", 1)
             if t > 1:
-                self.game.sfx("kid_slap", 2)
+                if t < 2:
+                    self.game.sfx("slap", 3)
                 self.game.screen.blit(mission_surf2, mission_rect2)
+            if t > 2:
+                self.game.sfx("slap", 2)
+                self.game.screen.blit(clock_surf, clock_rect)
             pygame.display.flip()
             dt = self.game.clock.tick(30) / 1000
             t += dt
+
+    def outro_screen(self):
+        t = 0
+        pygame.mixer.music.stop()
+        while t < 3:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    import sys
+                    sys.exit()
+            self.game.screen.fill("#1B1B1B")
+            mission_surf1 = self.fonts["body"].render("This is the outro screen", True, ("#FEFEFE"))
+            mission_rect1 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE-100))
+            mission_surf2 = self.fonts["body"].render("it will display flag pull, stats and win/loss", True, ("#FEFEFE"))
+            mission_rect2 = mission_surf2.get_rect(center=(X_CENTRE, Y_CENTRE))
+            clock_surf = self.fonts["highlight"].render(self.game.gametime(), True, ("#FEFEFE"))
+            clock_rect = clock_surf.get_rect(center=(X_CENTRE, Y_CENTRE+100))
+            self.game.screen.blit(mission_surf1, mission_rect1)
+            if t < 1:
+                self.game.sfx("slap", 1)
+            if t > 1:
+                if t < 2:
+                    self.game.sfx("slap", 3)
+                self.game.screen.blit(mission_surf2, mission_rect2)
+            if t > 2:
+                self.game.sfx("slap", 2)
+                self.game.screen.blit(clock_surf, clock_rect)
+            pygame.display.flip()
+            dt = self.game.clock.tick(30) / 1000
+            t += dt
+
 
     def confirm_exit_popup(self):
         """Displays a centered 'Are you sure?' confirmation dialog overlay."""

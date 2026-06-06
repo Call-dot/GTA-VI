@@ -64,6 +64,14 @@ class AssetLoader:
             image_dir / "sidewalk_tile.png"
         ).convert_alpha()
 
+        self.images["U_sideroad_sidewalk"] = pygame.image.load(
+            image_dir / "U_sideroad_sidewalk.png"
+        ).convert_alpha()
+
+        self.images["D_sideroad_sidewalk"] = pygame.image.load(
+            image_dir / "D_sideroad_sidewalk.png"
+        ).convert_alpha()
+
         self.images["L_concrete_tile"] = pygame.image.load(
             image_dir / "L_concrete_tile.png"
         ).convert_alpha()
@@ -192,6 +200,10 @@ class AssetLoader:
             image_dir / "G_light.png"
         ).convert_alpha()
 
+        self.images["school_sign"] = pygame.image.load(
+            image_dir / "school_sign.png"
+        ).convert_alpha()
+        
         self.images["tutorial"] = pygame.image.load(
             image_dir / "tutorial.png"
         ).convert_alpha()

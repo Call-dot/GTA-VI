@@ -105,6 +105,7 @@ class Game:
         self.invincible = False
         self.invincible_time = 0
         self.spawncamp_delay = SPAWNCAMP_DELAY  # milliseconds
+        self.ending = None
         self.signal = True
         self.signaltimer = 0
         self.music = [None, False]
@@ -116,10 +117,13 @@ class Game:
             self.corner_test = True
 
     def new_run(self):
+        self.playeropacity = 255
         self.health = 5
         self.playerspeed = 0
         self.playerpos = 0
         self.chased = False
+        self.igt = 0
+        self.ending = None
 
         self.player_x = X_CENTRE
         self.player_y = HEIGHT - SPACE_ABOVE_PLAYER
@@ -137,16 +141,21 @@ class Game:
         self.tiles.clear()
         self.tile_data.clear()
         self.weathering.clear()
+        self.tiler.choose_new_road()
         self.tiler.intersection.clear()
 
         self.bg_tiler_init()
 
+    def end_run(self):
+        self.player_opacity = 255
+        self.player_img.set_alpha(self.player_opacity)
+
     def run(self):
         while self.running:
+            self.new_run()
             self.music[1] = False
             self.vlc("menu", -1, False)
             self.ui.select_car_menu()
-            self.new_run()
             self.ui.intro_screen()
             while self.gaming:
                 self.vlc("theme", -1, False)
@@ -158,8 +167,9 @@ class Game:
                 self.update()
                 self.bg_tiler()
                 self.draw()
-                if DEBUG:
-                    print(len(self.tiles))
+                print(self.playerpos, self.ending)
+            self.ui.outro_screen()
+            self.end_run()
         print(self.tiles)
 
     def events(self):
@@ -167,6 +177,9 @@ class Game:
             if event.type == pygame.QUIT:
                 self.gaming = False
                 self.running = False
+                pygame.quit()
+                import sys
+                sys.exit()
             if event.type == pygame.KEYDOWN:
                 if self.t > 2:
                     self.tutorial = False
@@ -235,6 +248,10 @@ class Game:
         pass
 
     def update(self):
+        if self.playerpos > SCHOOL_DISTANCE:
+            self.tiler.almost_there = True
+        if self.ending and self.playerpos > self.ending:
+            self.gaming = False
         current_road = self.tile_data[self.playerpos]
         traffic_density = current_road["road_type"]["traffic"]
         self.igt += self.dt
@@ -294,6 +311,19 @@ class Game:
                     (npc.rect.centerx, npc.rect.centery),
                     1
                 )
+
+        if self.ending:
+            fade_start = self.playerpos >= self.ending - (END_THRESHOLD - 5)
+            if self.playerpos >= fade_start:
+                fadefactor = (
+                    (self.playerpos - fade_start)
+                    / (self.ending - fade_start)
+                )
+                fadefactor = min(max(fadefactor, 0), 1)
+                fadeout_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+                fadeout_surf.fill((200, 200, 200, int(fadefactor * 255)))
+                self.screen.blit(fadeout_surf, (0, 0))
+        
         if self.tutorial:
             self.show_actions()
         pygame.display.flip()
@@ -320,7 +350,7 @@ class Game:
             spawn_row = self.tiles[spawn_index]
             spawn_data = self.tile_data[spawn_index]
 
-        if "+" in spawn_row:
+        if "+" in spawn_row or "9" in spawn_row or "0" in spawn_row:
             return
         
         lane_width = (len(spawn_row) - 1) * ROAD_SIZE_X
@@ -377,6 +407,8 @@ class Game:
             if now - self.invincible_time > self.spawncamp_delay:
                 self.invincible = False
                 self.player_opacity = 255
+        else:
+            self.player_opacity = 255
 
         print(char, self.running_red(char), self.tiler.signals(), self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"])
         if self.running_red(char):
@@ -576,8 +608,6 @@ class Game:
     def bg_tiler(self):
         """Generates a text file which represents the road that gets sent to bg_blitter"""
         self.scroll_offset -= self.playerspeed * self.dt
-        if self.playerpos > SCHOOL_DISTANCE:
-            self.tiler.almost_there = True
 
         while self.scroll_offset < 0:
             self.scroll_offset += TILE_SIZE_Y
@@ -631,6 +661,12 @@ class Game:
 
                 elif char == "S":
                     img = self.assets.get_image("sidewalk_tile")
+
+                elif char == "9":
+                    img = self.assets.get_image("U_sideroad_sidewalk")
+
+                elif char == "0":
+                    img = self.assets.get_image("D_sideroad_sidewalk")
                 
                 elif char == "C":
                     img = self.assets.get_image("curb")
@@ -691,6 +727,9 @@ class Game:
                 
                 elif char == "f":
                     img = self.assets.get_image("DR_corner")
+
+                elif char == "@":
+                    img = self.assets.get_image("school_sign")
                 
                 elif char == "%":
                     if self.signal:
@@ -746,17 +785,18 @@ class Game:
                 return
             
     def sfx(self, sfx, id=None):
-        if self.sound[0] == sfx:
-            return
-        if self.sound[1] == id:
+        if self.sound[0] == sfx and self.sound[1] == id:
             return
         self.sound[0] = sfx
         self.sound[1] = id
+        print(self.sound)
         self.assets.get_sound(sfx).play()
         
     def gametime(self):
-        minutes, seconds = divmod(int(self.igt), 60)
-        return f"8:{minutes:02d}:{seconds:02d}am"
+        total_seconds = int(self.igt) + 30300
+        total_minutes, seconds = divmod(total_seconds, 60)
+        hours, minutes = divmod(total_minutes, 60)
+        return f"{hours}:{minutes:02d}:{seconds:02d}am"
 
     def lane_to_x(self, x_start, lane_index):
         return x_start + lane_index * ROAD_SIZE_X
