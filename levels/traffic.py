@@ -51,7 +51,6 @@ class Tiler:
                     if self.game.ending is None:
                         self.game.ending = (
                             len(self.game.tiles)
-                            + len(self.intersection)
                             + END_THRESHOLD
                         )
                 else:

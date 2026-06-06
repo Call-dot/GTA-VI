@@ -147,10 +147,12 @@ class Game:
         self.bg_tiler_init()
 
     def end_run(self):
+        print(self.tiles)
         self.player_opacity = 255
         self.player_img.set_alpha(self.player_opacity)
 
     def run(self):
+        self.ui.startup()
         while self.running:
             self.new_run()
             self.music[1] = False
@@ -168,9 +170,8 @@ class Game:
                 self.bg_tiler()
                 self.draw()
                 print(self.playerpos, self.ending)
-            self.ui.outro_screen()
+            self.ui.outro_screen(self.igt)
             self.end_run()
-        print(self.tiles)
 
     def events(self):
         for event in pygame.event.get():
@@ -313,7 +314,7 @@ class Game:
                 )
 
         if self.ending:
-            fade_start = self.playerpos >= self.ending - (END_THRESHOLD - 5)
+            fade_start = self.ending - (END_THRESHOLD // 3)
             if self.playerpos >= fade_start:
                 fadefactor = (
                     (self.playerpos - fade_start)
@@ -364,6 +365,8 @@ class Game:
                 lane_x = self.lane_to_x(x_start, lane_index)
                 
                 if not self.lane_clear(lane_index, y):
+                    continue
+                if not lane_data["allow_spawn"]:
                     continue
                 if not lane_x:
                     continue
@@ -636,7 +639,7 @@ class Game:
         if DEBUG:
             print(self.weathering)
 
-    def bg_blitter(self):
+    def bg_blitter(self, tiles=None):
         """Renders the text from bg_tiler into road images"""
         rows_visible = HEIGHT // TILE_SIZE_Y + 3
         start_row = max(0, self.playerpos - rows_visible)
@@ -644,9 +647,9 @@ class Game:
         signalimg = None
         
         for row_index in range(start_row, end_row):
-            row = self.tiles[row_index]
+            row = tiles[row_index] if tiles else self.tiles[row_index]
             # print("row", row)
-            distance_from_player = row_index - self.playerpos
+            # distance_from_player = row_index - self.playerpos
             # print("distance from player", distance_from_player)
             y = row_index * TILE_SIZE_Y - self.playerpos * TILE_SIZE_Y + self.scroll_offset
             # print("Y", y)
@@ -655,7 +658,7 @@ class Game:
             #half_road_width = (len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X) + LINE_SIZE_X * 2
             
             for col_index, char in enumerate(row):
-                if char == "." or char == "," or char == "+":
+                if char == "." or char == "," or char == "+" or char == "$":
                     img = self.assets.get_image("road_tile")
                     weathering = self.assets.get_image("weathered_pattern_" + self.weathering[row_index][col_index // 2])
 

@@ -276,6 +276,10 @@ class AssetLoader:
             image_dir / "ghost.png"
         ).convert_alpha()
 
+        self.images["strockstar"] = pygame.image.load(
+            image_dir / "strockstar.png"
+        ).convert_alpha()
+
     def load_music(self):
         music_dir = Path("assets/music")
 
