@@ -68,44 +68,40 @@ class Ui:
     def outro_screen(self, igt):
         t = 0
         finaletime = igt
-        finale = True
-        outing = True
+        finale = True if self.game.success else False
         self.game.playerpos = 0
-        self.game.playerspeed = 100
+        self.game.playerspeed = 0
+        self.game.scroll_offset = 0
         player_img = self.game.player_img
+        player_rect = player_img.get_rect()
+        player_turn = 0
         queue = int(finaletime * QUEUE_INTENSITY)
         npcs = []
         pygame.mixer.music.stop()
-        tiles = ["4C5-,:,-6C3", "__SC,:,:,:,CS_@"]
+        tiles = ["4C5-,:,-6C3", "SC+:+:+:+CS", "SC+:+:+:+CS", "__SC,:,:,:,CS_@"]
         tiles.extend(["SC+:+:+:+CS" if i % 2 else "SC$:+:+:$CS" for i in range(queue)])
         tiles.extend(["______SC+:+:+:+-2999999", "______SC+`+`+`+`+`+`+`+", "______SC+`+`+`+`+`+`+`+", "______SC+`+`+`+`+`+`+`+", "______SC+:+:+:+-4000000"])
-        tiles.extend(["SC$:+:+:$CS" for _ in range(25)])
+        tiles.extend(["SC+:+:+:+CS" for _ in range(25)])
 
         for row_idx, row in enumerate(tiles):
             for col_idx, char in enumerate(row):
                 if char != "$":
                     continue
 
-                _, image = self.assets.get_random_car(
-                    self.game.player_model
-                )
+                _, image = self.assets.get_random_car(self.game.player_model)
 
                 road_width = (len(row) - 1) * ROAD_SIZE_X
                 x_start = X_CENTRE - road_width / 2
 
                 npcs.append({
                     "image": image,
-
-                    # world coordinates
-                    "world_row": row_idx,
                     "world_y": row_idx * TILE_SIZE_Y,
-
                     "world_x": x_start + col_idx * ROAD_SIZE_X,
-
                     "turning": False,
                     "turn_progress": 0.0,
                     "angle": 180,
                 })
+
         intersection_row = None
         for row_idx, row in enumerate(tiles):
             if "2999999" in row:
@@ -142,78 +138,83 @@ class Ui:
                     center=(player_x, player_y)
                 )
                 self.game.screen.blit(player_rotated, rect)
+            elif player_rect.colliderect(intersection_rect):
+                player_turn += dt * 1.5
+                if player_turn > 1:
+                    player_turn = 1
+                p = player_turn
+                player_x += 2 ** (p * 10)
+                player_y += TILE_SIZE_Y * 0.25 * (1 - math.cos(p * math.pi / 2))
+                playerangle = 180 + 90 * p
+                player_rotated = pygame.transform.rotate(player_img, playerangle)
+                rect = player_rotated.get_rect(center=(player_x, player_y))
+                self.game.screen.blit(player_rotated, rect)
+                print(player_turn, p, player_x, player_y, playerangle)
             else:
                 player_y = 2 * TILE_SIZE_Y
                 player_x = X_CENTRE + 3 * ROAD_SIZE_X
                 player_rotated = pygame.transform.rotate(player_img, 180)
-                rect = player_img.get_rect(
+                player_rect = player_img.get_rect(
                     center=(player_x, player_y)
                 )
-                self.game.screen.blit(player_rotated, rect)
+                self.game.screen.blit(player_rotated, player_rect)
 
             intersection_screen_y = (
                 intersection_row * TILE_SIZE_Y
                 - self.game.playerpos * TILE_SIZE_Y
                 + self.game.scroll_offset
             )
-            intersection_rect = pygame.Rect(
-                0,
-                intersection_screen_y - TILE_SIZE_Y // 2,
-                WIDTH,
-                TILE_SIZE_Y
-            )
+            intersection_rect = pygame.Rect(0, intersection_screen_y + TILE_SIZE_Y, WIDTH, TILE_SIZE_Y)
+            
             for npc in npcs:
-                screen_y = (npc["world_y"] - self.game.playerpos * TILE_SIZE_Y + self.game.scroll_offset)
+                screen_y = npc["world_y"]
                 screen_x = npc["world_x"]
 
                 if not npc["turning"]:
-                    npc_rect = npc["image"].get_rect(
-                        center=(screen_x, screen_y)
-                    )
+                    npc_rect = npc["image"].get_rect(center=(screen_x, screen_y))
                     if npc_rect.colliderect(intersection_rect):
                         npc["turning"] = True
-                        npc["turn_start_x"] = npc["world_x"]
-                        npc["turn_start_y"] = npc["world_y"]
 
                 else:
-                    npc["turn_progress"] += dt * 0.75
-                    p = min(1.0, npc["turn_progress"])
-                    radius = ROAD_SIZE_X * 2
-                    npc["world_x"] = (
-                        npc["turn_start_x"]
-                        + radius * math.sin(p * math.pi / 2)
-                    )
-                    npc["world_y"] = (
-                        npc["turn_start_y"]
-                        + radius * (1 - math.cos(p * math.pi / 2))
-                    )
-                    npc["angle"] = 180 - 90 * p
-            
+                    npc["turn_progress"] += dt * 1.5
+                    if npc["turn_progress"] > 1:
+                        npc["turn_progress"] = 1
+                    p = npc["turn_progress"]
+                    # Rotate from facing down-road to facing right
+                    npc["angle"] = 180 + 90 * p
+
             for npc in npcs:
-                screen_y = (npc["world_y"] - self.game.playerpos * TILE_SIZE_Y + self.game.scroll_offset)
+                screen_y = npc["world_y"]
                 screen_x = npc["world_x"]
+                draw_x = screen_x
+                draw_y = screen_y
+
+                if npc["turning"]:
+                    p = npc["turn_progress"]
+                    # Visual slide into the right-turn lane
+                    draw_x += 2 ** (p * 10)
+                    # Optional tiny forward movement to make the turn feel smoother
+                    draw_y += TILE_SIZE_Y * 0.25 * (1 - math.cos(p * math.pi / 2))
+
                 rotated = pygame.transform.rotate(npc["image"], npc["angle"])
-                rect = rotated.get_rect(center=(screen_x, screen_y))
-
+                rect = rotated.get_rect(center=(draw_x, draw_y))
                 self.game.screen.blit(rotated, rect)
-
 
             clock_surf = self.fonts["highlight"].render(self.game.gametime(), True, ("#FEFEFE"))
             clock_rect = clock_surf.get_rect(center=(X_CENTRE, Y_CENTRE))
             self.game.screen.blit(clock_surf, clock_rect)
             
-            if t > 19:
+            if player_x > WIDTH:
                 finale = False
-            pygame.display.flip()
-            
+            pygame.display.flip()    
 
+        t = 0
         while t < 3:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     import sys
                     sys.exit()
-            self.game.screen.fill("#1B1B1B")
             mission_surf1 = self.fonts["body"].render("This is the outro screen", True, ("#FEFEFE"))
             mission_rect1 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE-100))
             mission_surf2 = self.fonts["body"].render("it will display flag pull, stats and win/loss", True, ("#FEFEFE"))

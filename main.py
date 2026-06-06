@@ -32,6 +32,8 @@ class Game:
         print(SEED)
         self.not_british_driving = NOT_BRITISH_DRIVING
         self.igt = 0
+        self.success = False
+        self.respect = False
 
         # Run AssetLoader and save it in self.assets
         self.assets = AssetLoader()
@@ -124,6 +126,8 @@ class Game:
         self.chased = False
         self.igt = 0
         self.ending = None
+        self.success = False
+        self.respect = False
 
         self.player_x = X_CENTRE
         self.player_y = HEIGHT - SPACE_ABOVE_PLAYER
@@ -253,6 +257,7 @@ class Game:
             self.tiler.almost_there = True
         if self.ending and self.playerpos > self.ending:
             self.gaming = False
+            self.success = True
         current_road = self.tile_data[self.playerpos]
         traffic_density = current_road["road_type"]["traffic"]
         self.igt += self.dt
