@@ -48,8 +48,8 @@ class Tiler:
                     self.intersection.extend(self.sideroad(sideroad_size))
                     self.intersection.extend(self.ending())
 
-                    if self.game.ending is None:
-                        self.game.ending = (
+                    if self.game.endpoint is None:
+                        self.game.endpoint = (
                             len(self.game.tiles)
                             + END_THRESHOLD
                         )

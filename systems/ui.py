@@ -14,6 +14,7 @@ class Ui:
             "subtitle": self.assets.get_font("pixelify"),
             "header": self.assets.get_font("ops"),
             "body": self.assets.get_font("bungee"),
+            "bungeeshade": self.assets.get_font("bungeeshade"),
             "highlight": self.assets.get_font("rubik"),
             "caption": self.assets.get_font("tiny")
         }
@@ -78,6 +79,9 @@ class Ui:
         queue = int(finaletime * QUEUE_INTENSITY)
         npcs = []
         pygame.mixer.music.stop()
+        self.game.music[1] = False
+        self.game.vlc("shepard", -1, False)
+
         tiles = ["4C5-,:,-6C3", "SC+:+:+:+CS", "SC+:+:+:+CS", "__SC,:,:,:,CS_@"]
         tiles.extend(["SC+:+:+:+CS" if i % 2 else "SC$:+:+:$CS" for i in range(queue)])
         tiles.extend(["______SC+:+:+:+-2999999", "______SC+`+`+`+`+`+`+`+", "______SC+`+`+`+`+`+`+`+", "______SC+`+`+`+`+`+`+`+", "______SC+:+:+:+-4000000"])
@@ -89,7 +93,6 @@ class Ui:
                     continue
 
                 _, image = self.assets.get_random_car(self.game.player_model)
-
                 road_width = (len(row) - 1) * ROAD_SIZE_X
                 x_start = X_CENTRE - road_width / 2
 
@@ -134,9 +137,7 @@ class Ui:
                 playerangle = math.sin(player_y * math.pi * 2 / (4 * TILE_SIZE_Y)) * 30
                 print(player_x)
                 player_rotated = pygame.transform.rotate(player_img, playerangle + 180)
-                rect = player_rotated.get_rect(
-                    center=(player_x, player_y)
-                )
+                rect = player_rotated.get_rect(center=(player_x, player_y))
                 self.game.screen.blit(player_rotated, rect)
             elif player_rect.colliderect(intersection_rect):
                 player_turn += dt * 1.5
@@ -154,16 +155,10 @@ class Ui:
                 player_y = 2 * TILE_SIZE_Y
                 player_x = X_CENTRE + 3 * ROAD_SIZE_X
                 player_rotated = pygame.transform.rotate(player_img, 180)
-                player_rect = player_img.get_rect(
-                    center=(player_x, player_y)
-                )
+                player_rect = player_img.get_rect(center=(player_x, player_y))
                 self.game.screen.blit(player_rotated, player_rect)
 
-            intersection_screen_y = (
-                intersection_row * TILE_SIZE_Y
-                - self.game.playerpos * TILE_SIZE_Y
-                + self.game.scroll_offset
-            )
+            intersection_screen_y = (intersection_row * TILE_SIZE_Y - self.game.playerpos * TILE_SIZE_Y + self.game.scroll_offset)
             intersection_rect = pygame.Rect(0, intersection_screen_y + TILE_SIZE_Y, WIDTH, TILE_SIZE_Y)
             
             for npc in npcs:
@@ -191,9 +186,7 @@ class Ui:
 
                 if npc["turning"]:
                     p = npc["turn_progress"]
-                    # Visual slide into the right-turn lane
                     draw_x += 2 ** (p * 10)
-                    # Optional tiny forward movement to make the turn feel smoother
                     draw_y += TILE_SIZE_Y * 0.25 * (1 - math.cos(p * math.pi / 2))
 
                 rotated = pygame.transform.rotate(npc["image"], npc["angle"])
@@ -202,38 +195,14 @@ class Ui:
 
             clock_surf = self.fonts["highlight"].render(self.game.gametime(), True, ("#FEFEFE"))
             clock_rect = clock_surf.get_rect(center=(X_CENTRE, Y_CENTRE))
-            self.game.screen.blit(clock_surf, clock_rect)
             
             if player_x > WIDTH:
                 finale = False
-            pygame.display.flip()    
-
-        t = 0
-        while t < 3:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    import sys
-                    sys.exit()
-            mission_surf1 = self.fonts["body"].render("This is the outro screen", True, ("#FEFEFE"))
-            mission_rect1 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE-100))
-            mission_surf2 = self.fonts["body"].render("it will display flag pull, stats and win/loss", True, ("#FEFEFE"))
-            mission_rect2 = mission_surf2.get_rect(center=(X_CENTRE, Y_CENTRE))
-            clock_surf = self.fonts["highlight"].render(self.game.gametime(), True, ("#FEFEFE"))
-            clock_rect = clock_surf.get_rect(center=(X_CENTRE, Y_CENTRE+100))
-            self.game.screen.blit(mission_surf1, mission_rect1)
-            if t < 1:
-                self.game.sfx("slap", 1)
-            if t > 1:
-                if t < 2:
-                    self.game.sfx("slap", 3)
-                self.game.screen.blit(mission_surf2, mission_rect2)
-            if t > 2:
-                self.game.sfx("slap", 2)
+                return True if self.game.igt + DEPARTURE_TIME <= DEADLINE else False
+            else:
                 self.game.screen.blit(clock_surf, clock_rect)
+
             pygame.display.flip()
-            dt = self.game.clock.tick(30) / 1000
-            t += dt
 
     def confirm_exit_popup(self, draw_background_callback=None):
         """Displays a centered 'Are you sure?' confirmation dialog overlay."""
@@ -309,6 +278,9 @@ class Ui:
         row2_count = 4
         row2_start_x = X_CENTRE - ((card_w * row2_count + spacing_x * (row2_count - 1)) / 2)
         row2_y = Y_CENTRE + (spacing_y / 2)
+
+        self.game.music[1] = False
+        self.game.vlc("menu", -1, False)
 
         rects = []
         for idx in range(len(self.game.car_options)):
@@ -416,8 +388,48 @@ class Ui:
             pygame.display.flip()
             self.game.clock.tick(30)
 
-    def ending(self):
-        print("ending")
+    def ending(self, respect):
+        result = respect
+        t = 0
+        overlay = pygame.Surface((WIDTH, 420), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        self.game.screen.blit(overlay, (0, 180))
+        while t < 3:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    import sys
+                    sys.exit()
+
+            if result:
+                mission_surf1 = self.fonts["bungeeshade"].render("MiSSiON PaSSeD", True, ("#FEFEFE"))
+                mission_surf2 = self.fonts["caption"].render("Get to school", True, ("#FEFEFE"))
+                star_surf = self.fonts["body"].render("Rating: ", True, ("#FEFEFE"))
+                for i in range(self.game.health):
+                    self.game.screen.blit(self.game.star_img, (X_CENTRE + 200 - (69 + i * 40), Y_CENTRE + 120))
+            else:
+                mission_surf1 = self.fonts["bungeeshade"].render("MiSSiON FaiLeD", True, ("#FEFEFE"))
+                mission_surf2 = self.fonts["caption"].render("You're late!", True, ("#FEFEFE"))
+            mission_rect1 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE-100))
+            mission_rect2 = mission_surf2.get_rect(center=(X_CENTRE, Y_CENTRE-42))
+            star_rect = mission_surf2.get_rect(center=(X_CENTRE-200, Y_CENTRE+125))
+            clock_surf = self.fonts["body"].render("Mission time: " + self.game.gametime(), True, ("#FEFEFE"))
+            clock_rect = clock_surf.get_rect(center=(X_CENTRE, Y_CENTRE+100))
+            self.game.screen.blit(mission_surf1, mission_rect1)
+
+            if t < 1:
+                self.game.sfx("slap", 1)
+            if t > 1:
+                if t < 2:
+                    self.game.sfx("slap", 3)
+                self.game.screen.blit(mission_surf2, mission_rect2)
+            if t > 2:
+                self.game.sfx("slap", 2)
+                self.game.screen.blit(clock_surf, clock_rect)
+                self.game.screen.blit(star_surf, star_rect)
+            pygame.display.flip()
+            dt = self.game.clock.tick(30) / 1000
+            t += dt
 
     def stats_menu(self):
         viewing_stats = True

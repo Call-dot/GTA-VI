@@ -37,6 +37,8 @@ QUEUE_INTENSITY = 0.5
 TIMEWARP = 2
 QUEUE_TIMEWARP = 15
 SCHOOL_DISTANCE = 20
+DEPARTURE_TIME = 30000
+DEADLINE = 30600
 
 CAR_MODELS = [
             {"speed": 85, "control": 70, "lives": 3, "auto_align": 90},

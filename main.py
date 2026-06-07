@@ -107,7 +107,7 @@ class Game:
         self.invincible = False
         self.invincible_time = 0
         self.spawncamp_delay = SPAWNCAMP_DELAY  # milliseconds
-        self.ending = None
+        self.endpoint = None
         self.signal = True
         self.signaltimer = 0
         self.music = [None, False]
@@ -125,7 +125,7 @@ class Game:
         self.playerpos = 0
         self.chased = False
         self.igt = 0
-        self.ending = None
+        self.endpoint = None
         self.success = False
         self.respect = False
 
@@ -151,6 +151,11 @@ class Game:
         self.bg_tiler_init()
 
     def end_run(self):
+        if self.success:
+            self.respect = self.ui.outro_screen(self.igt)
+        else:
+            self.respect = False
+        self.ui.ending(self.respect)
         print(self.tiles)
         self.player_opacity = 255
         self.player_img.set_alpha(self.player_opacity)
@@ -159,8 +164,6 @@ class Game:
         self.ui.startup()
         while self.running:
             self.new_run()
-            self.music[1] = False
-            self.vlc("menu", -1, False)
             self.ui.select_car_menu()
             self.ui.intro_screen()
             while self.gaming:
@@ -173,8 +176,7 @@ class Game:
                 self.update()
                 self.bg_tiler()
                 self.draw()
-                print(self.playerpos, self.ending)
-            self.ui.outro_screen(self.igt)
+                print(self.playerpos, self.endpoint)
             self.end_run()
 
     def events(self):
@@ -255,7 +257,7 @@ class Game:
     def update(self):
         if self.playerpos > SCHOOL_DISTANCE:
             self.tiler.almost_there = True
-        if self.ending and self.playerpos > self.ending:
+        if self.endpoint and self.playerpos > self.endpoint:
             self.gaming = False
             self.success = True
         current_road = self.tile_data[self.playerpos]
@@ -318,12 +320,12 @@ class Game:
                     1
                 )
 
-        if self.ending:
-            fade_start = self.ending - (END_THRESHOLD // 3)
+        if self.endpoint:
+            fade_start = self.endpoint - (END_THRESHOLD // 3)
             if self.playerpos >= fade_start:
                 fadefactor = (
                     (self.playerpos - fade_start)
-                    / (self.ending - fade_start)
+                    / (self.endpoint - fade_start)
                 )
                 fadefactor = min(max(fadefactor, 0), 1)
                 fadeout_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
@@ -492,7 +494,6 @@ class Game:
             self.vlc("police", 1, True)
         else:
             pass
-                
             
     def on_road(self):
         row = self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"]
@@ -802,7 +803,7 @@ class Game:
         self.assets.get_sound(sfx).play()
         
     def gametime(self):
-        total_seconds = int(self.igt) + 30300
+        total_seconds = int(self.igt) + DEPARTURE_TIME
         total_minutes, seconds = divmod(total_seconds, 60)
         hours, minutes = divmod(total_minutes, 60)
         return f"{hours}:{minutes:02d}:{seconds:02d}am"

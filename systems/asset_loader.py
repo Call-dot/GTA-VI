@@ -26,11 +26,11 @@ class AssetLoader:
         )
 
         self.fonts["bungee"] = pygame.font.Font(
-            font_dir / "Bungee-Regular.ttf", 24
+            font_dir / "Bungee-Regular.ttf", 30
         )
 
         self.fonts["tiny"] = pygame.font.Font(
-            font_dir / "Bungee-Regular.ttf", 10
+            font_dir / "Bungee-Regular.ttf", 12
         )
 
         self.fonts["bungeeshade"] = pygame.font.Font(
@@ -286,6 +286,7 @@ class AssetLoader:
         self.music["theme"] = music_dir / "GTA6_theme_song.mp3"
         self.music["menu"] = music_dir / "menumusic.wav"
         self.music["police"] = music_dir / "guardian_theme.mp3"
+        self.music["shepard"] = music_dir / "shepard.mp3"
 
     def load_sounds(self):
         sound_dir = Path("assets/sounds")
@@ -293,10 +294,12 @@ class AssetLoader:
         self.sound["slap"] = pygame.mixer.Sound(
             sound_dir / "slap.mp3"
         )
+        self.sound["slap"].set_volume(0.5)
 
         self.sound["kid_slap"] = pygame.mixer.Sound(
             sound_dir / "kid-slap-oh.mp3"
         )
+        self.sound["kid_slap"].set_volume(0.5)
 
     def get_font(self, name):
         return self.fonts[name]
