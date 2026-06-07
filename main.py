@@ -164,6 +164,8 @@ class Game:
         self.ui.startup()
         while self.running:
             self.new_run()
+            self.ui.startup()        
+            self.ui.main_menu()
             self.ui.select_car_menu()
             self.ui.intro_screen()
             while self.gaming:

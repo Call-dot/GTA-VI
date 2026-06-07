@@ -1,7 +1,7 @@
 import pygame
 import random
 import math
-#from systems.asset_loader import AssetLoader
+from systems.asset_loader import AssetLoader
 from settings import *
 from entities.npc import Npc
 
@@ -36,6 +36,54 @@ class Ui:
             dt = self.game.clock.tick(30) / 1000
             t += dt
 
+    def main_menu(self):
+        """Displays the Main Menu with New Game and Load Game options."""
+        menu_running = True
+        
+        btn_w, btn_h = 240, 60
+        new_game_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 40, btn_w, btn_h)
+        load_game_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 40, btn_w, btn_h)
+        
+        while menu_running:
+            mouse_pos = pygame.mouse.get_pos()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    import sys
+                    sys.exit()
+                    
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1: 
+                        if new_game_btn.collidepoint(event.pos):
+                            self.game.is_loaded_save = False 
+                            menu_running = False 
+                            
+                        elif load_game_btn.collidepoint(event.pos):
+                            self.game.is_loaded_save = True
+                            menu_running = False 
+
+            self.game.screen.fill("#1B1B1B")
+            
+            title_surf = self.fonts["title"].render("GTA 6", True, (255, 215, 0))
+            title_rect = title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 140))
+            self.game.screen.blit(title_surf, title_rect)
+            
+            new_color = (0, 200, 100) if new_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
+            load_color = (52, 152, 219) if load_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
+            
+            pygame.draw.rect(self.game.screen, new_color, new_game_btn, border_radius=8)
+            pygame.draw.rect(self.game.screen, load_color, load_game_btn, border_radius=8)
+            
+            new_text = self.fonts["body"].render("NEW GAME", True, (255, 255, 255))
+            load_text = self.fonts["body"].render("LOAD GAME", True, (255, 255, 255))
+            
+            self.game.screen.blit(new_text, new_text.get_rect(center=new_game_btn.center))
+            self.game.screen.blit(load_text, load_text.get_rect(center=load_game_btn.center))
+            
+            pygame.display.flip()
+            self.game.clock.tick(30)
+
     def intro_screen(self):
         t = 0
         pygame.mixer.music.stop()
@@ -65,7 +113,6 @@ class Ui:
             pygame.display.flip()
             dt = self.game.clock.tick(30) / 1000
             t += dt
-
     def outro_screen(self, igt):
         t = 0
         finaletime = igt
@@ -232,13 +279,11 @@ class Ui:
                     if no_btn.collidepoint(event.pos):
                         return False 
 
-            # Redraw selection menu layout first so background isn't black
             if draw_background_callback:
                 draw_background_callback()
             else:
                 self.game.screen.fill("#1B1B1B")
 
-            # Layer translucent dimming panel over background menu layout
             overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 150))
             self.game.screen.blit(overlay, (0, 0))
@@ -300,7 +345,6 @@ class Ui:
         stats_font = pygame.font.SysFont("Arial", 24, bold=True)
         car_name_font = pygame.font.SysFont("Arial", 18, bold=True)
 
-        # Helper method used to redraw UI layout frames seamlessly when nested loops pause
         def draw_everything():
             self.game.screen.fill("#1B1B1B")
             
