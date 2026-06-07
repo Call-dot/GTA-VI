@@ -260,7 +260,7 @@ class Game:
             self.success = True
         current_road = self.tile_data[self.playerpos]
         traffic_density = current_road["road_type"]["traffic"]
-        self.igt += self.dt
+        self.igt += self.dt * TIMEWARP
         if random.random() < traffic_density * self.dt * (self.playerspeed / MAX_SPEED + 0.5):
             self.spawn_npc()
         self.all_sprites.update(self.dt)
@@ -429,6 +429,7 @@ class Game:
 
         for enemy in self.enemies:
             if SPACE_ABOVE_PLAYER - CATCH_DISTANCE < enemy.world_y:
+                self.sfx("kid_slap", 4)
                 self.gaming = False
                 return
 
