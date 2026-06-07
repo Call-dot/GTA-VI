@@ -161,6 +161,8 @@ class Game:
             self.new_run()
             self.music[1] = False
             self.vlc("menu", -1, False)
+            self.ui.startup()        
+            self.ui.main_menu()
             self.ui.select_car_menu()
             self.ui.intro_screen()
             while self.gaming:
