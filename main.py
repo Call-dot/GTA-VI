@@ -571,18 +571,22 @@ class Game:
 
     def scenery_generator(self, biome="grassland"):
         """Carey this is for you, I want this function to generate random scenery"""
-        scenery = []
-
+        """generate random biomes"""
         biome = self.current_biome
         data = BIOMES[biome]
+        generated_scenery = []
 
         if type == "tree":
             count = int(1000 * 600 * data["tree_density"] * 0.00005)
 
             tree_images = [
                 img for img in data["backround_images"]
-                if "tree" in img 
+                if "tree" in img or "palm" in img
             ]
+            
+            if tree_images:
+                for _ in range(count):
+                    img = random.choice(tree_items)
         
         elif type == "rocks":
             pass #rock generator
