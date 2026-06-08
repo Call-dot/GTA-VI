@@ -301,14 +301,6 @@ class Game:
         clock_rect = clock_surf.get_rect(topright=(WIDTH-20, 69))
         self.screen.blit(clock_surf, clock_rect)
         half_width = rect.width / 2
-        
-        #if self.player_x < half_width:
-            #ghost_rect = player_rotated.get_rect(center=(self.player_x + WIDTH, self.player_y))
-            #self.screen.blit(player_rotated, ghost_rect)
-            
-        #elif self.player_x > WIDTH - half_width:
-            #ghost_rect = player_rotated.get_rect(center=(self.player_x - WIDTH, self.player_y))
-            #self.screen.blit(player_rotated, ghost_rect)
 
         pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169)) # placeholder speedometer
         if HITBOX:

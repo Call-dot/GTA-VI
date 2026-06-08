@@ -1,9 +1,55 @@
 import pygame
 import random
 import math
+import sys
 from systems.asset_loader import AssetLoader
 from settings import *
 from entities.npc import Npc
+
+class VolumeSlider:
+    def __init__(self, x, y, width, height, initial_val=0.5):
+        self.track_rect = pygame.Rect(x, y, width, height)
+        self.value = initial_val
+        self.knob_w = 16
+        self.knob_h = height + 10
+        self.dragging = False
+        self.update_knob_from_value()
+
+    def update_knob_from_value(self):
+        percentage = self.value
+        knob_center_x = self.track_rect.x + (percentage * self.track_rect.width)
+        self.knob_rect = pygame.Rect(
+            knob_center_x - self.knob_w // 2, 
+            self.track_rect.centery - self.knob_h // 2, 
+            self.knob_w, 
+            self.knob_h
+        )
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, (44, 62, 80), self.track_rect, border_radius=4)
+        filled_width = self.knob_rect.centerx - self.track_rect.x
+        if filled_width > 0:
+            filled_rect = pygame.Rect(self.track_rect.x, self.track_rect.y, filled_width, self.track_rect.height)
+            pygame.draw.rect(screen, (255, 215, 0), filled_rect, border_radius=4)
+            
+        mouse_pos = pygame.mouse.get_pos()
+        knob_color = (52, 152, 219) if (self.knob_rect.collidepoint(mouse_pos) or self.dragging) else (127, 140, 141)
+        pygame.draw.rect(screen, knob_color, self.knob_rect, border_radius=4)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1 and self.knob_rect.collidepoint(event.pos):
+                self.dragging = True
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                self.dragging = False
+        elif event.type == pygame.MOUSEMOTION:
+            if self.dragging:
+                new_x = max(self.track_rect.x, min(event.pos[0], self.track_rect.right))
+                self.knob_rect.centerx = new_x
+                self.value = (new_x - self.track_rect.x) / self.track_rect.width
+                return True
+        return False
 
 class Ui:
     def __init__(self, game):
@@ -26,7 +72,6 @@ class Ui:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    import sys
                     sys.exit()
             self.game.screen.fill("#1B1B1B")
             logo = self.assets.get_image("strockstar")
@@ -37,22 +82,54 @@ class Ui:
             t += dt
 
     def main_menu(self):
-        """Displays the Main Menu with New Game and Load Game options."""
+        """Displays the Main Menu with New Game, Load Game, Settings, and an Exit option."""
         menu_running = True
         self.game.music[1] = False
         self.game.vlc("title", -1, False)
 
-        btn_w, btn_h = 240, 60
-        new_game_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 40, btn_w, btn_h)
-        load_game_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 40, btn_w, btn_h)
+        btn_w, btn_h = 240, 55
+        new_game_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 70, btn_w, btn_h)
+        load_game_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 5, btn_w, btn_h)
+        settings_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 60, btn_w, btn_h)
         
-        while menu_running:
+        exit_btn_w, exit_btn_h = 220, 50
+        exit_game_btn = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
+        
+        def draw_main_menu_content():
+            self.game.screen.fill("#1B1B1B")
+            
+            title_surf = self.fonts["title"].render("GRAND THEFT AUTO VI", True, (255, 215, 0))
+            title_rect = title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 140))
+            self.game.screen.blit(title_surf, title_rect)
+            
             mouse_pos = pygame.mouse.get_pos()
+            
+            new_color = (0, 200, 100) if new_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
+            load_color = (52, 152, 219) if load_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
+            settings_color = (155, 89, 182) if settings_btn.collidepoint(mouse_pos) else (44, 62, 80)
+            exit_color = (130, 20, 20) if exit_game_btn.collidepoint(mouse_pos) else (200, 50, 50)
+            
+            pygame.draw.rect(self.game.screen, new_color, new_game_btn, border_radius=8)
+            pygame.draw.rect(self.game.screen, load_color, load_game_btn, border_radius=8)
+            pygame.draw.rect(self.game.screen, settings_color, settings_btn, border_radius=8)
+            pygame.draw.rect(self.game.screen, exit_color, exit_game_btn, border_radius=6)
+            
+            new_text = self.fonts["body"].render("NEW GAME", True, (255, 255, 255))
+            load_text = self.fonts["body"].render("LOAD GAME", True, (255, 255, 255))
+            settings_text = self.fonts["body"].render("SETTINGS", True, (255, 255, 255))
+            exit_text = self.fonts["body"].render("EXIT GAME", True, (255, 255, 255))
+            
+            self.game.screen.blit(new_text, new_text.get_rect(center=new_game_btn.center))
+            self.game.screen.blit(load_text, load_text.get_rect(center=load_game_btn.center))
+            self.game.screen.blit(settings_text, settings_text.get_rect(center=settings_btn.center))
+            self.game.screen.blit(exit_text, exit_text.get_rect(center=exit_game_btn.center))
+
+        while menu_running:
+            draw_main_menu_content()
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    import sys
                     sys.exit()
                     
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -65,26 +142,63 @@ class Ui:
                         elif load_game_btn.collidepoint(event.pos):
                             self.game.is_loaded_save = True
                             menu_running = False 
-                            return True #To modify later
+                            return True 
 
+                        elif settings_btn.collidepoint(event.pos):
+                            self.settings_menu()
+
+                        elif exit_game_btn.collidepoint(event.pos):
+                            self.confirm_exit_popup(draw_background_callback=draw_main_menu_content)
+
+            pygame.display.flip()
+            self.game.clock.tick(30)
+
+    def settings_menu(self):
+        """Displays a simple settings menu featuring the interactive volume slider."""
+        in_settings = True
+        
+        slider_w, slider_h = 300, 12
+        volume_slider = VolumeSlider(
+            x=X_CENTRE - slider_w // 2, 
+            y=Y_CENTRE, 
+            width=slider_w, 
+            height=slider_h, 
+            initial_val=pygame.mixer.music.get_volume()
+        )
+        
+        back_btn_w, back_btn_h = 160, 50
+        back_btn = pygame.Rect(20, HEIGHT - 20 - back_btn_h, back_btn_w, back_btn_h)
+        
+        while in_settings:
+            mouse_pos = pygame.mouse.get_pos()
             self.game.screen.fill("#1B1B1B")
             
-            title_surf = self.fonts["title"].render("GRAND THEFT AUTO VI", True, (255, 215, 0))
-            title_rect = title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 140))
-            self.game.screen.blit(title_surf, title_rect)
+            title_surf = self.fonts["header"].render("SETTINGS", True, (255, 255, 255))
+            self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 100)))
             
-            new_color = (0, 200, 100) if new_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
-            load_color = (52, 152, 219) if load_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
+            vol_pct = int(volume_slider.value * 100)
+            vol_surf = self.fonts["body"].render(f"MUSIC VOLUME: {vol_pct}%", True, (255, 255, 255))
+            self.game.screen.blit(vol_surf, vol_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 30)))
             
-            pygame.draw.rect(self.game.screen, new_color, new_game_btn, border_radius=8)
-            pygame.draw.rect(self.game.screen, load_color, load_game_btn, border_radius=8)
+            volume_slider.draw(self.game.screen)
             
-            new_text = self.fonts["body"].render("NEW GAME", True, (255, 255, 255))
-            load_text = self.fonts["body"].render("LOAD GAME", True, (255, 255, 255))
+            back_bg_color = (44, 62, 80) if back_btn.collidepoint(mouse_pos) else (30, 43, 56)
+            pygame.draw.rect(self.game.screen, back_bg_color, back_btn, border_radius=6)
+            back_text = self.fonts["body"].render("< BACK", True, (255, 255, 255))
+            self.game.screen.blit(back_text, back_text.get_rect(center=back_btn.center))
             
-            self.game.screen.blit(new_text, new_text.get_rect(center=new_game_btn.center))
-            self.game.screen.blit(load_text, load_text.get_rect(center=load_game_btn.center))
-            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                    
+                if volume_slider.handle_event(event):
+                    pygame.mixer.music.set_volume(volume_slider.value)
+                    
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1 and back_btn.collidepoint(event.pos):
+                        in_settings = False
+
             pygame.display.flip()
             self.game.clock.tick(30)
 
@@ -95,7 +209,6 @@ class Ui:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    import sys
                     sys.exit()
             self.game.screen.fill("#1B1B1B")
             mission_surf1 = self.fonts["body"].render("Somewhere near St. Robert CHS", True, ("#FEFEFE"))
@@ -117,6 +230,7 @@ class Ui:
             pygame.display.flip()
             dt = self.game.clock.tick(30) / 1000
             t += dt
+
     def outro_screen(self, igt):
         t = 0
         finaletime = igt
@@ -166,7 +280,6 @@ class Ui:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    import sys
                     sys.exit()
             dt = self.game.clock.tick(30) / 1000
             t += dt
@@ -182,11 +295,14 @@ class Ui:
                 )
             self.game.scroll_offset -= self.game.playerspeed * dt
             self.game.bg_blitter(tiles)
+            
+            intersection_screen_y = (intersection_row * TILE_SIZE_Y - self.game.playerpos * TILE_SIZE_Y + self.game.scroll_offset)
+            intersection_rect = pygame.Rect(0, intersection_screen_y + TILE_SIZE_Y, WIDTH, TILE_SIZE_Y)
+
             if t < 2:
                 player_y = t * TILE_SIZE_Y
                 player_x = ROAD_SIZE_X * 2 * math.sin(player_y * math.pi / (4 * TILE_SIZE_Y)) + X_CENTRE + ROAD_SIZE_X
                 playerangle = math.sin(player_y * math.pi * 2 / (4 * TILE_SIZE_Y)) * 30
-                print(player_x)
                 player_rotated = pygame.transform.rotate(player_img, playerangle + 180)
                 rect = player_rotated.get_rect(center=(player_x, player_y))
                 self.game.screen.blit(player_rotated, rect)
@@ -201,16 +317,12 @@ class Ui:
                 player_rotated = pygame.transform.rotate(player_img, playerangle)
                 rect = player_rotated.get_rect(center=(player_x, player_y))
                 self.game.screen.blit(player_rotated, rect)
-                print(player_turn, p, player_x, player_y, playerangle)
             else:
                 player_y = 2 * TILE_SIZE_Y
                 player_x = X_CENTRE + 3 * ROAD_SIZE_X
                 player_rotated = pygame.transform.rotate(player_img, 180)
                 player_rect = player_img.get_rect(center=(player_x, player_y))
                 self.game.screen.blit(player_rotated, player_rect)
-
-            intersection_screen_y = (intersection_row * TILE_SIZE_Y - self.game.playerpos * TILE_SIZE_Y + self.game.scroll_offset)
-            intersection_rect = pygame.Rect(0, intersection_screen_y + TILE_SIZE_Y, WIDTH, TILE_SIZE_Y)
             
             for npc in npcs:
                 screen_y = npc["world_y"]
@@ -220,13 +332,11 @@ class Ui:
                     npc_rect = npc["image"].get_rect(center=(screen_x, screen_y))
                     if npc_rect.colliderect(intersection_rect):
                         npc["turning"] = True
-
                 else:
                     npc["turn_progress"] += dt * 1.5
                     if npc["turn_progress"] > 1:
                         npc["turn_progress"] = 1
                     p = npc["turn_progress"]
-                    # Rotate from facing down-road to facing right
                     npc["angle"] = 180 + 90 * p
 
             for npc in npcs:
@@ -256,9 +366,7 @@ class Ui:
             pygame.display.flip()
 
     def confirm_exit_popup(self, draw_background_callback=None):
-        """Displays a centered 'Are you sure?' confirmation dialog overlay."""
         confirming = True
-        
         popup_w, popup_h = 400, 200
         popup_rect = pygame.Rect(X_CENTRE - popup_w // 2, Y_CENTRE - popup_h // 2, popup_w, popup_h)
         
@@ -272,13 +380,11 @@ class Ui:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    import sys
                     sys.exit()
                     
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if yes_btn.collidepoint(event.pos):
                         pygame.quit()
-                        import sys
                         sys.exit()
                     if no_btn.collidepoint(event.pos):
                         return False 
@@ -316,7 +422,6 @@ class Ui:
 
     def select_car_menu(self):
         selecting = True
-        
         card_w, card_h = 160, 190  
         spacing_x, spacing_y = 30, 60
         
@@ -341,7 +446,7 @@ class Ui:
                 y = row2_y
             rects.append(pygame.Rect(x, y, card_w, card_h))
 
-        exit_btn_w, exit_btn_h = 160, 50
+        exit_btn_w, exit_btn_h = 220, 50
         exit_btn_rect = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
 
         back_btn_w, back_btn_h = 160, 50
@@ -372,7 +477,6 @@ class Ui:
 
             curr_mouse = pygame.mouse.get_pos()
 
-            # Render Choice Cards
             for idx, rect in enumerate(rects):
                 if rect.collidepoint(curr_mouse):
                     color, border = (0, 200, 100), 5
@@ -389,7 +493,6 @@ class Ui:
                 name_rect = name_surf.get_rect(center=(rect.centerx, rect.bottom - 20))
                 self.game.screen.blit(name_surf, name_rect)
 
-            # Exit Game Button Layout
             exit_bg_color = (130, 20, 20) if exit_btn_rect.collidepoint(curr_mouse) else (200, 50, 50)
             exit_border_width = 0 if exit_btn_rect.collidepoint(curr_mouse) else 2
             pygame.draw.rect(self.game.screen, exit_bg_color, exit_btn_rect, exit_border_width, border_radius=6)
@@ -397,7 +500,6 @@ class Ui:
             exit_text_surf = self.fonts["body"].render("EXIT GAME", True, (255, 255, 255))
             self.game.screen.blit(exit_text_surf, exit_text_surf.get_rect(center=exit_btn_rect.center))
 
-            # Stats Button Layout
             stats_bg_color = (20, 100, 130) if stats_btn_rect.collidepoint(curr_mouse) else (50, 150, 200)
             stats_border_width = 0 if stats_btn_rect.collidepoint(curr_mouse) else 2
             pygame.draw.rect(self.game.screen, stats_bg_color, stats_btn_rect, stats_border_width, border_radius=6)
@@ -405,7 +507,6 @@ class Ui:
             stats_text_surf = stats_font.render("STATS", True, (255, 255, 255))
             self.game.screen.blit(stats_text_surf, stats_text_surf.get_rect(center=stats_btn_rect.center))
 
-            # Back Button
             back_bg_color = (130, 20, 20) if back_btn_rect.collidepoint(curr_mouse) else (200, 50, 50)
             back_border_width = 0 if back_btn_rect.collidepoint(curr_mouse) else 2
             pygame.draw.rect(self.game.screen, back_bg_color, back_btn_rect, back_border_width, border_radius=6)
@@ -419,7 +520,6 @@ class Ui:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    import sys
                     sys.exit()
                 
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -460,7 +560,6 @@ class Ui:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    import sys
                     sys.exit()
 
             if result:
