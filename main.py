@@ -633,9 +633,7 @@ class Game:
             row = self.tiler.next_row()
             self.tiles.append(row["layout"])
             self.tile_data.append(row)
-            self.weathering.append(
-                self.bg_generator("weathering")
-            )
+            self.weathering.append(self.bg_generator("weathering"))
 
         while self.scroll_offset >= TILE_SIZE_Y:
             self.scroll_offset -= TILE_SIZE_Y

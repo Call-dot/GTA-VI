@@ -6,51 +6,6 @@ from systems.asset_loader import AssetLoader
 from settings import *
 from entities.npc import Npc
 
-class VolumeSlider:
-    def __init__(self, x, y, width, height, initial_val=0.5):
-        self.track_rect = pygame.Rect(x, y, width, height)
-        self.value = initial_val
-        self.knob_w = 16
-        self.knob_h = height + 10
-        self.dragging = False
-        self.update_knob_from_value()
-
-    def update_knob_from_value(self):
-        percentage = self.value
-        knob_center_x = self.track_rect.x + (percentage * self.track_rect.width)
-        self.knob_rect = pygame.Rect(
-            knob_center_x - self.knob_w // 2, 
-            self.track_rect.centery - self.knob_h // 2, 
-            self.knob_w, 
-            self.knob_h
-        )
-
-    def draw(self, screen):
-        pygame.draw.rect(screen, (44, 62, 80), self.track_rect, border_radius=4)
-        filled_width = self.knob_rect.centerx - self.track_rect.x
-        if filled_width > 0:
-            filled_rect = pygame.Rect(self.track_rect.x, self.track_rect.y, filled_width, self.track_rect.height)
-            pygame.draw.rect(screen, (255, 215, 0), filled_rect, border_radius=4)
-            
-        mouse_pos = pygame.mouse.get_pos()
-        knob_color = (52, 152, 219) if (self.knob_rect.collidepoint(mouse_pos) or self.dragging) else (127, 140, 141)
-        pygame.draw.rect(screen, knob_color, self.knob_rect, border_radius=4)
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1 and self.knob_rect.collidepoint(event.pos):
-                self.dragging = True
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 1:
-                self.dragging = False
-        elif event.type == pygame.MOUSEMOTION:
-            if self.dragging:
-                new_x = max(self.track_rect.x, min(event.pos[0], self.track_rect.right))
-                self.knob_rect.centerx = new_x
-                self.value = (new_x - self.track_rect.x) / self.track_rect.width
-                return True
-        return False
-
 class Ui:
     def __init__(self, game):
         self.game = game
@@ -751,3 +706,48 @@ class Ui:
             
             pygame.display.flip()
             self.game.clock.tick(30)
+
+class VolumeSlider:
+    def __init__(self, x, y, width, height, initial_val=0.5):
+        self.track_rect = pygame.Rect(x, y, width, height)
+        self.value = initial_val
+        self.knob_w = 16
+        self.knob_h = height + 10
+        self.dragging = False
+        self.update_knob_from_value()
+
+    def update_knob_from_value(self):
+        percentage = self.value
+        knob_center_x = self.track_rect.x + (percentage * self.track_rect.width)
+        self.knob_rect = pygame.Rect(
+            knob_center_x - self.knob_w // 2, 
+            self.track_rect.centery - self.knob_h // 2, 
+            self.knob_w, 
+            self.knob_h
+        )
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, (44, 62, 80), self.track_rect, border_radius=4)
+        filled_width = self.knob_rect.centerx - self.track_rect.x
+        if filled_width > 0:
+            filled_rect = pygame.Rect(self.track_rect.x, self.track_rect.y, filled_width, self.track_rect.height)
+            pygame.draw.rect(screen, (255, 215, 0), filled_rect, border_radius=4)
+            
+        mouse_pos = pygame.mouse.get_pos()
+        knob_color = (52, 152, 219) if (self.knob_rect.collidepoint(mouse_pos) or self.dragging) else (127, 140, 141)
+        pygame.draw.rect(screen, knob_color, self.knob_rect, border_radius=4)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1 and self.knob_rect.collidepoint(event.pos):
+                self.dragging = True
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                self.dragging = False
+        elif event.type == pygame.MOUSEMOTION:
+            if self.dragging:
+                new_x = max(self.track_rect.x, min(event.pos[0], self.track_rect.right))
+                self.knob_rect.centerx = new_x
+                self.value = (new_x - self.track_rect.x) / self.track_rect.width
+                return True
+        return False
