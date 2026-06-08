@@ -578,11 +578,31 @@ class Game:
             
             if tree_images:
                 for _ in range(count):
-                    img = random.choice(tree_items)
+                    img = random.choice(tree_images)
+                    
+                    # Generates random positions
+                    x = random.randint(0, 1000)
+                    y = random.randint(300, 550) 
+                    
+                    generated_scenery.append({"image": img, "x": x, "y": y})
         
         elif type == "rocks":
-            pass #rock generator
-        #If you don't know how to go about this, do as I've done for bg_generator() 
+            count = int(1000 * 60 * data["rock_density"] * 0.00005)
+
+            rock_images = [ 
+                img for img in data["backround_images"]
+                if "rock" in img or "stone" in img
+            ]
+            
+            if rock_images:
+                for _ in range(count):
+                    img = random.choice(rock_images)
+                    
+                    x = random.randint(0, 1000)
+                    y = random.randint(400, 580) 
+                    
+                    generated_scenery.append({"image": img, "x": x, "y": y})
+        return generated_scenery
     
     def scenery_tiler(self):
         """
