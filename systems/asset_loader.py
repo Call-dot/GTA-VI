@@ -276,6 +276,14 @@ class AssetLoader:
             image_dir / "ghost.png"
         ).convert_alpha()
 
+        self.images["gas"] = pygame.image.load(
+            image_dir / "gas.png"
+        ).convert_alpha()
+
+        self.images["bomb"] = pygame.image.load(
+            image_dir / "bomb.png"
+        ).convert_alpha()
+
         self.images["strockstar"] = pygame.image.load(
             image_dir / "strockstar.png"
         ).convert_alpha()
