@@ -14,19 +14,19 @@ class AssetLoader:
         font_dir = Path("assets/fonts")
 
         self.fonts["honk"] = pygame.font.Font(
-            font_dir / "Honk-Regular-VariableFont_MORF,SHLN.ttf", 50
+            font_dir / "Honk-Regular-VariableFont_MORF,SHLN.ttf", 64
         )
 
         self.fonts["ops"] = pygame.font.Font(
-            font_dir / "BlackOpsOne-Regular.ttf", 24
+            font_dir / "BlackOpsOne-Regular.ttf", 64
         )
 
         self.fonts["rubik"] = pygame.font.Font(
-            font_dir / "RubikMonoOne-Regular.ttf", 24
+            font_dir / "RubikMonoOne-Regular.ttf", 32
         )
 
         self.fonts["bungee"] = pygame.font.Font(
-            font_dir / "Bungee-Regular.ttf", 30
+            font_dir / "Bungee-Regular.ttf", 32
         )
 
         self.fonts["tiny"] = pygame.font.Font(
@@ -284,6 +284,7 @@ class AssetLoader:
         music_dir = Path("assets/music")
 
         self.music["theme"] = music_dir / "GTA6_theme_song.mp3"
+        self.music["title"] = music_dir / "titlemusic.mp3"
         self.music["menu"] = music_dir / "menumusic.wav"
         self.music["police"] = music_dir / "guardian_theme.mp3"
         self.music["shepard"] = music_dir / "shepard.mp3"

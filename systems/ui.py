@@ -10,7 +10,7 @@ class Ui:
         self.game = game
         self.assets = game.assets
         self.fonts = {
-            "title": self.assets.get_font("honk"),
+            "title": self.assets.get_font("ops"),
             "subtitle": self.assets.get_font("pixelify"),
             "header": self.assets.get_font("ops"),
             "body": self.assets.get_font("bungee"),
@@ -39,7 +39,9 @@ class Ui:
     def main_menu(self):
         """Displays the Main Menu with New Game and Load Game options."""
         menu_running = True
-        
+        self.game.music[1] = False
+        self.game.vlc("title", -1, False)
+
         btn_w, btn_h = 240, 60
         new_game_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 40, btn_w, btn_h)
         load_game_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 40, btn_w, btn_h)
@@ -58,14 +60,16 @@ class Ui:
                         if new_game_btn.collidepoint(event.pos):
                             self.game.is_loaded_save = False 
                             menu_running = False 
+                            return True
                             
                         elif load_game_btn.collidepoint(event.pos):
                             self.game.is_loaded_save = True
                             menu_running = False 
+                            return True #To modify later
 
             self.game.screen.fill("#1B1B1B")
             
-            title_surf = self.fonts["title"].render("GTA 6", True, (255, 215, 0))
+            title_surf = self.fonts["title"].render("GRAND THEFT AUTO VI", True, (255, 215, 0))
             title_rect = title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 140))
             self.game.screen.blit(title_surf, title_rect)
             
@@ -339,6 +343,9 @@ class Ui:
 
         exit_btn_w, exit_btn_h = 160, 50
         exit_btn_rect = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
+
+        back_btn_w, back_btn_h = 160, 50
+        back_btn_rect = pygame.Rect(20, 20, back_btn_w, back_btn_h)
         
         stats_btn_w, stats_btn_h = 160, 50
         stats_btn_rect = pygame.Rect(X_CENTRE - stats_btn_w / 2, HEIGHT - 20 - stats_btn_h, stats_btn_w, stats_btn_h)
@@ -348,7 +355,7 @@ class Ui:
         def draw_everything():
             self.game.screen.fill("#1B1B1B")
             
-            welcome_surf = self.fonts["title"].render("WELCOME TO GTA 6", True, (255, 215, 0)) 
+            welcome_surf = self.fonts["highlight"].render("WELCOME TO GTA 6", True, (255, 215, 0)) 
             welcome_rect = welcome_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 0.8))
             self.game.screen.blit(welcome_surf, welcome_rect)
             
@@ -387,7 +394,7 @@ class Ui:
             exit_border_width = 0 if exit_btn_rect.collidepoint(curr_mouse) else 2
             pygame.draw.rect(self.game.screen, exit_bg_color, exit_btn_rect, exit_border_width, border_radius=6)
             
-            exit_text_surf = self.fonts["highlight"].render("EXIT GAME", True, (255, 255, 255))
+            exit_text_surf = self.fonts["body"].render("EXIT GAME", True, (255, 255, 255))
             self.game.screen.blit(exit_text_surf, exit_text_surf.get_rect(center=exit_btn_rect.center))
 
             # Stats Button Layout
@@ -397,6 +404,14 @@ class Ui:
             
             stats_text_surf = stats_font.render("STATS", True, (255, 255, 255))
             self.game.screen.blit(stats_text_surf, stats_text_surf.get_rect(center=stats_btn_rect.center))
+
+            # Back Button
+            back_bg_color = (130, 20, 20) if back_btn_rect.collidepoint(curr_mouse) else (200, 50, 50)
+            back_border_width = 0 if back_btn_rect.collidepoint(curr_mouse) else 2
+            pygame.draw.rect(self.game.screen, back_bg_color, back_btn_rect, back_border_width, border_radius=6)
+            
+            back_text_surf = self.fonts["body"].render("< BACK", True, (255, 255, 255))
+            self.game.screen.blit(back_text_surf, back_text_surf.get_rect(center=back_btn_rect.center))
 
         while selecting:
             draw_everything()
@@ -415,11 +430,14 @@ class Ui:
                             self.game.player_model = chosen_key
                             self.game.player_img = self.game.assets.get_image(chosen_key)
                             self.game.current_car_idx = idx 
-                            self.game.gaming = True
                             selecting = False
+                            return True
                             
                     if exit_btn_rect.collidepoint(click_pos):
                         self.confirm_exit_popup(draw_background_callback=draw_everything)
+                    
+                    if back_btn_rect.collidepoint(click_pos):
+                        return False
                         
                     if stats_btn_rect.collidepoint(click_pos):
                         hovered_idx = 0
@@ -470,7 +488,8 @@ class Ui:
             if t > 2:
                 self.game.sfx("slap", 2)
                 self.game.screen.blit(clock_surf, clock_rect)
-                self.game.screen.blit(star_surf, star_rect)
+                if result:
+                    self.game.screen.blit(star_surf, star_rect)
             pygame.display.flip()
             dt = self.game.clock.tick(30) / 1000
             t += dt

@@ -118,7 +118,7 @@ class Game:
         if DEBUG or not(DEBUG):
             self.corner_test = True
 
-    def new_run(self):
+    def new_game(self):
         self.playeropacity = 255
         self.health = 5
         self.playerspeed = 0
@@ -149,6 +149,17 @@ class Game:
         self.tiler.intersection.clear()
 
         self.bg_tiler_init()
+    
+    def new_run(self):
+        self.ui.startup()
+        while True:
+            if not self.ui.main_menu():
+                return
+            if self.ui.select_car_menu():
+                break
+
+        self.gaming = True
+        self.ui.intro_screen()
 
     def end_run(self):
         if self.success:
@@ -163,11 +174,8 @@ class Game:
     def run(self):
         self.ui.startup()
         while self.running:
+            self.new_game()
             self.new_run()
-            self.ui.startup()        
-            self.ui.main_menu()
-            self.ui.select_car_menu()
-            self.ui.intro_screen()
             while self.gaming:
                 self.vlc("theme", -1, False)
                 self.dt = self.clock.tick(30) / 1000
