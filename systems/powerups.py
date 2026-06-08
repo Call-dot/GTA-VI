@@ -23,8 +23,10 @@ POWERUP_WEIGHTS = {
     "bomb":  12,
 }
 
-BOMB_RADIUS = 350
+BLAST_RADIUS = 350
+BLAST_POWER = 69
 
+ULTRA_SPEED = 690
 SPEED_POWERUP_DURATION = 8.0
 
 def weighted_random_powerup():

@@ -296,6 +296,7 @@ class AssetLoader:
         self.music["menu"] = music_dir / "menumusic.wav"
         self.music["police"] = music_dir / "guardian_theme.mp3"
         self.music["shepard"] = music_dir / "shepard.mp3"
+        self.music["speed"] = music_dir / "freebird.mp3"
 
     def load_sounds(self):
         sound_dir = Path("assets/sounds")
@@ -303,12 +304,22 @@ class AssetLoader:
         self.sound["slap"] = pygame.mixer.Sound(
             sound_dir / "slap.mp3"
         )
-        self.sound["slap"].set_volume(0.5)
+        self.sound["slap"].set_volume(0.4)
 
         self.sound["kid_slap"] = pygame.mixer.Sound(
             sound_dir / "kid-slap-oh.mp3"
         )
         self.sound["kid_slap"].set_volume(0.5)
+
+        self.sound["slip"] = pygame.mixer.Sound(
+            sound_dir / "slip.mp3"
+        )
+        self.sound["slip"].set_volume(0.9)
+
+        self.sound["boom"] = pygame.mixer.Sound(
+            sound_dir / "vine-boom.mp3"
+        )
+        self.sound["boom"].set_volume(0.5)
 
     def get_font(self, name):
         return self.fonts[name]

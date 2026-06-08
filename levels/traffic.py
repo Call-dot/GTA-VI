@@ -17,7 +17,6 @@ class Tiler:
         self.t = self.game.t
         self.almost_there = False
 
-
         self.choose_new_road()
 
     def choose_new_road(self):

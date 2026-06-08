@@ -8,7 +8,7 @@ from levels.roads import ROAD_TYPES
 from entities.npc import Npc
 from entities.enemy import Police
 from systems.ui import Ui
-from systems.powerups import BOMB_RADIUS, SPEED_POWERUP_DURATION
+from systems.powerups import *
 
 class Game:
     def __init__(self):
@@ -115,7 +115,8 @@ class Game:
         self.sound = [None, None]
         self.chased = False
         self.tutorial = True
-        self.active_powerup = None
+        self.inventory = None
+        self.stealing = False
         self.speed_powerup_active = False
         self.speed_powerup_timer  = 0.0
 
@@ -141,7 +142,7 @@ class Game:
         self.playerangle = 0
         self.tutorial = True
         self.tiler.almost_there = False
-        self.active_powerup = None
+        self.inventory = None
         self.speed_powerup_active = False
         self.speed_powerup_timer = 0.0
 
@@ -217,28 +218,37 @@ class Game:
     def playerinput(self, dt):
         keys = pygame.key.get_pressed()
         
-        if keys[pygame.K_DOWN]:
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
             self.playermode = 1
-            self.accelerate()
-        elif keys[pygame.K_UP]:
+        elif keys[pygame.K_UP] or keys[pygame.K_w]:
             self.playermode = 2
-            self.reverse(BRAKE_POWER)
         else:
             self.playermode = 0
-            self.decelerate(FRICTION)
     
-        if keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
+        if (
+            (keys[pygame.K_a] and not keys[pygame.K_d]) or
+            (keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT])
+        ):
             self.playerdir = 1
-        elif keys[pygame.K_RIGHT] and not keys[pygame.K_LEFT]:
+        elif (
+            (keys[pygame.K_d] and not keys[pygame.K_a]) or
+            (keys[pygame.K_RIGHT] and not keys[pygame.K_LEFT])
+        ):
             self.playerdir = 2
         else:
             self.playerdir = 0
+        
+        self.stealing = keys[pygame.K_q] or keys[pygame.K_LSHIFT]
 
-        if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+        if keys[pygame.K_e] or keys[pygame.K_RSHIFT]:
+            print(self.inventory)
             self.use_powerup()
 
     def accelerate(self):
-        acceleration = (MAX_SPEED - self.playerspeed) * 2
+        if self.speed_powerup_active:
+            acceleration = (ULTRA_SPEED - self.playerspeed) * 2
+        else:
+            acceleration = (MAX_SPEED - self.playerspeed) * 2
         self.playerspeed += acceleration * self.dt
         
     def decelerate(self, friction):
@@ -250,12 +260,17 @@ class Game:
         self.playerspeed += deceleration * self.dt
     
     def player(self):
+        if self.playermode == 1:
+            self.accelerate()
+        elif self.playermode == 2:
+            self.reverse(BRAKE_POWER)
+        else:
+            self.decelerate(FRICTION)
+
         if self.playerdir == 1:
             target_v = -MAX_TURN_SPEED
-
         elif self.playerdir == 2:
             target_v = MAX_TURN_SPEED
-
         else:
             if AUTO_LANE_ALIGN:
                 target_v = 0
@@ -263,7 +278,10 @@ class Game:
                 target_v = self.player_vx
        
         self.player_vx += (target_v - self.player_vx) * HANDLING * self.dt 
-        self.player_vx *= (self.playerspeed / MAX_SPEED)
+        if self.speed_powerup_active:
+            self.player_vx *= (self.playerspeed / ULTRA_SPEED)
+        else:
+            self.player_vx *= (self.playerspeed / MAX_SPEED)
         self.player_x += self.player_vx * self.dt
         
         if self.player_x > WIDTH+50:
@@ -310,6 +328,11 @@ class Game:
         for i in range(self.health):
             self.screen.blit(self.star_img, (WIDTH - (69 + i * 40), 20))
 
+        if self.inventory:
+            powerup = POWERUP_TYPES.get(self.inventory)
+            powerup_img = self.assets.get_image(powerup["icon"])
+            powerup_rect = powerup_img.get_rect(topleft=(20, 69))
+            self.screen.blit(powerup_img, powerup_rect)
         clock_surf = self.fonts["highlight"].render(self.gametime(), True, ("#FEFEFE"))
         clock_rect = clock_surf.get_rect(topright=(WIDTH-20, 69))
         self.screen.blit(clock_surf, clock_rect)
@@ -435,7 +458,7 @@ class Game:
         else:
             self.player_opacity = 255
 
-        print(char, self.running_red(char), self.tiler.signals(), self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"])
+        # print(char, self.running_red(char), self.tiler.signals(), self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"])
         if self.running_red(char):
             if self.chased == False:
                 print("[!!!POLICE SIREN SOUNDS!!!]")
@@ -451,24 +474,22 @@ class Game:
                 return
 
         # NPC collision
-        keys = pygame.key.get_pressed()
-        stealing = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
  
         for npc in self.npcs:
             if not self.player_hitbox or not self.player_rect:
                 continue
  
-            # ── damage: only when the *hitbox* (smaller rect) overlaps ──────
-            if self.player_hitbox.colliderect(npc.hitbox):
+            # Damage
+            if npc.hitbox and self.player_hitbox.colliderect(npc.hitbox):
                 self.oof()
                 return  # prevent double-damage in the same frame
  
-            # ── steal: full rect overlaps but hitbox does NOT ────────────────
-            # (player is just barely touching – the "safe zone" around the car)
-            if stealing and self.player_rect.colliderect(npc.rect):
+            # Stealing
+            if self.stealing and self.player_rect.colliderect(npc.rect):
                 stolen = npc.try_steal(self.player_rect)
-                if stolen and self.active_powerup is None:
-                    self.active_powerup = stolen
+                self.sfx("slip", 6)
+                if stolen: # and self.inventory is None:
+                    self.inventory = stolen
                     print(f"[POWERUP] Stole: {stolen}")
 
         # road check
@@ -525,7 +546,6 @@ class Game:
             
     def on_road(self):
         row = self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"]
-        print(row)
         lane_width = ((len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X))
         x_start = X_CENTRE - lane_width / 2
 
@@ -586,6 +606,59 @@ class Game:
 
         lane_x = self.lane_to_x(x_start, lane)
         return self.player_x - lane_x
+    
+    def tick_powerups(self, dt):
+        """Count down any active timed powerup effects."""
+        if self.speed_powerup_active:
+            self.speed_powerup_timer -= dt
+            if self.speed_powerup_timer <= 0:
+                self.speed_powerup_active = False
+                self.speed_powerup_timer  = 0.0
+                self.on_speed_powerup_end()
+    
+    def use_powerup(self):
+        if self.inventory is None:
+            return
+ 
+        powerup = self.inventory
+        self.inventory = None   # consume it
+ 
+        if powerup == "speed":
+            self.activate_speed_powerup()
+        elif powerup == "bomb":
+            self.activate_bomb_powerup()
+
+    def activate_speed_powerup(self):
+
+        self.music[1] = False
+        self.vlc("speed", -1, True)
+        self.speed_powerup_active = True
+        self.speed_powerup_timer  = SPEED_POWERUP_DURATION
+        print("[POWERUP] Speed boost activated!")
+ 
+    def on_speed_powerup_end(self):
+        self.music[1] = False
+        print("[POWERUP] Speed boost ended.")
+
+    def activate_bomb_powerup(self):
+        print(f"[POWERUP] Bomb! clearing radius={BLAST_RADIUS}px")
+        self.sfx("boom", 5)
+        to_kill = []
+        for npc in self.npcs:
+            dx = npc.world_x - self.player_x
+            dy = npc.world_y - self.player_y
+            dist = (dx * dx + dy * dy) ** 0.5
+            if dist <= BLAST_RADIUS:
+                to_kill.append(npc)
+ 
+        for npc in to_kill:
+            npc.boom = {
+                "origin_x": self.player_x,
+                "origin_y": self.player_y
+            }
+ 
+        print(f"[POWERUP] Bomb removed {len(to_kill)} NPCs.")
+
 
     def scenery_generator(self, biome="grassland"):
         """Carey this is for you, I want this function to generate random scenery"""
@@ -822,58 +895,6 @@ class Game:
 
         if signalimg:
             self.screen.blit(signalimg, signalrect)
-
-    def tick_powerups(self, dt):
-        """Count down any active timed powerup effects."""
-        if self.speed_powerup_active:
-            self.speed_powerup_timer -= dt
-            if self.speed_powerup_timer <= 0:
-                self.speed_powerup_active = False
-                self.speed_powerup_timer  = 0.0
-                self.on_speed_powerup_end()
-    
-    def use_powerup(self):
-        if self.active_powerup is None:
-            return
- 
-        powerup = self.active_powerup
-        self.active_powerup = None   # consume it
- 
-        if powerup == "speed":
-            self.activate_speed_powerup()
-        elif powerup == "bomb":
-            self.activate_bomb_powerup()
-
-    def activate_speed_powerup(self):
-        
-        self.speed_powerup_active = True
-        self.speed_powerup_timer  = SPEED_POWERUP_DURATION
-        print("[POWERUP] Speed boost activated!")
-        # TODO: swap MAX_SPEED → POWERUP_MAX_SPEED in accelerate()
-        # e.g.  self.current_max_speed = POWERUP_MAX_SPEED
- 
-    def on_speed_powerup_end(self):
-        print("[POWERUP] Speed boost ended.")
-        # TODO: restore normal speed cap
-        # e.g.  self.current_max_speed = MAX_SPEED
-
-    def activate_bomb_powerup(self):
-
-        print(f"[POWERUP] Bomb! clearing radius={BOMB_RADIUS}px")
-        # self.sfx("bomb_explode")
-        to_kill = []
-        for npc in self.npcs:
-            dx = npc.world_x - self.player_x
-            dy = npc.world_y - self.player_y
-            dist = (dx * dx + dy * dy) ** 0.5
-            if dist <= BOMB_RADIUS:
-                to_kill.append(npc)
- 
-        for npc in to_kill:
-            npc.kill()
- 
-        print(f"[POWERUP] Bomb removed {len(to_kill)} NPCs.")
-
 
     def vlc(self, music, times=-1, overwrite=True):
         if self.music[0] == music:

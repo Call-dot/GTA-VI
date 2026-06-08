@@ -1,7 +1,7 @@
 # npc = non player car
 import pygame
 from settings import *
-from systems.powerups import POWERUP_TYPES, weighted_random_powerup
+from systems.powerups import *
 
 FOLLOW_DISTANCE = 220
 FRICTION = 4
@@ -25,6 +25,8 @@ class Npc(pygame.sprite.Sprite):
         self.world_x    = x
         self.world_y    = y
         self.hitbox     = None
+        self.boom       = None
+        self.angle      = 0
 
         self.powerup = weighted_random_powerup()
         self.has_powerup = self.powerup is not None
@@ -50,7 +52,7 @@ class Npc(pygame.sprite.Sprite):
 
         return pygame.transform.smoothscale(raw, (TRUNK_ICON_SIZE, TRUNK_ICON_SIZE))
 
-    def _trunk_position(self):
+    def trunk_position(self):
         """
         Return the (cx, cy) screen position of the trunk icon.
 
@@ -66,6 +68,9 @@ class Npc(pygame.sprite.Sprite):
         return (cx, cy)
 
     def update(self, dt):
+        if self.boom:
+            self.yeet(self.boom)
+            return
         car_ahead, distance = self.get_car_ahead()
         apparent_speed = self.speed - self.game.playerspeed
 
@@ -82,8 +87,8 @@ class Npc(pygame.sprite.Sprite):
         self.rect.center = (self.world_x, self.world_y)
         self.hitbox = self.rect.inflate(-HITBOX_TOLERANCE, -HITBOX_TOLERANCE)
 
-        angle = 180 if self.speed > 0 else 0
-        self.image = pygame.transform.rotate(self.base_image, angle)
+        self.angle = 180 if self.speed > 0 else 0
+        self.image = pygame.transform.rotate(self.base_image, self.angle)
 
         # delete when offscreen
         if self.rect.top > self.game.height + 169:
@@ -97,7 +102,7 @@ class Npc(pygame.sprite.Sprite):
         if not self.has_powerup or self._icon_surf is None:
             return
 
-        cx, cy = self._trunk_position()
+        cx, cy = self.trunk_position()
         icon_rect = self._icon_surf.get_rect(center=(cx, cy))
         surface.blit(self._icon_surf, icon_rect)
 
@@ -150,3 +155,18 @@ class Npc(pygame.sprite.Sprite):
                 nearest_car      = npc
 
         return nearest_car, nearest_distance
+    
+    def yeet(self, origin):
+        dx = origin["origin_x"] - self.world_x
+        dy = origin["origin_y"] - self.world_y
+        self.hitbox = None
+        self.world_x -= BLAST_POWER * dx / dy
+        self.world_y -= BLAST_POWER * dy / dx
+        self.rect.center = (self.world_x, self.world_y)
+        self.angle += 2 * dy / dx
+        self.image = pygame.transform.rotate(self.base_image, self.angle)
+        if (
+            self.world_x < -200 or self.world_x > WIDTH+200 
+            or self.world_y < -200 or self.world_y > HEIGHT+200
+        ):
+            self.kill()
