@@ -117,8 +117,8 @@ class Game:
         self.tutorial = True
         self.inventory = None
         self.stealing = False
-        self.speed_powerup_active = False
-        self.speed_powerup_timer  = 0.0
+        self.speeding = False
+        self.speeding_timer  = 0.0
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
@@ -143,8 +143,8 @@ class Game:
         self.tutorial = True
         self.tiler.almost_there = False
         self.inventory = None
-        self.speed_powerup_active = False
-        self.speed_powerup_timer = 0.0
+        self.speeding = False
+        self.speeding_timer = 0.0
 
         self.npcs.empty()
         self.enemies.empty()
@@ -245,7 +245,7 @@ class Game:
             self.use_powerup()
 
     def accelerate(self):
-        if self.speed_powerup_active:
+        if self.speeding:
             acceleration = (ULTRA_SPEED - self.playerspeed) * 2
         else:
             acceleration = (MAX_SPEED - self.playerspeed) * 2
@@ -278,7 +278,7 @@ class Game:
                 target_v = self.player_vx
        
         self.player_vx += (target_v - self.player_vx) * HANDLING * self.dt 
-        if self.speed_powerup_active:
+        if self.speeding:
             self.player_vx *= (self.playerspeed / ULTRA_SPEED)
         else:
             self.player_vx *= (self.playerspeed / MAX_SPEED)
@@ -609,11 +609,11 @@ class Game:
     
     def tick_powerups(self, dt):
         """Count down any active timed powerup effects."""
-        if self.speed_powerup_active:
-            self.speed_powerup_timer -= dt
-            if self.speed_powerup_timer <= 0:
-                self.speed_powerup_active = False
-                self.speed_powerup_timer  = 0.0
+        if self.speeding:
+            self.speeding_timer -= dt
+            if self.speeding_timer <= 0:
+                self.speeding = False
+                self.speeding_timer  = 0.0
                 self.on_speed_powerup_end()
     
     def use_powerup(self):
@@ -632,8 +632,8 @@ class Game:
 
         self.music[1] = False
         self.vlc("speed", -1, True)
-        self.speed_powerup_active = True
-        self.speed_powerup_timer  = SPEED_POWERUP_DURATION
+        self.speeding = True
+        self.speeding_timer  = SPEED_POWERUP_DURATION
         print("[POWERUP] Speed boost activated!")
  
     def on_speed_powerup_end(self):
@@ -644,6 +644,11 @@ class Game:
         print(f"[POWERUP] Bomb! clearing radius={BLAST_RADIUS}px")
         self.sfx("boom", 5)
         to_kill = []
+        for enemy in self.enemies:
+            enemy.boom = {
+                "origin_x": self.player_x,
+                "origin_y": self.player_y
+            }
         for npc in self.npcs:
             dx = npc.world_x - self.player_x
             dy = npc.world_y - self.player_y
