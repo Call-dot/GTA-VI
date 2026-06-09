@@ -67,21 +67,9 @@ class Game:
         self.player_img = None
         self.star_img = self.assets.get_image("star")
 
-        # This variable controls whether the player is currently trying to accelerate
-        # Is directly updated by player
-        # Accelerating = 1
-        # Braking = 2
-        # Neutral = 0
         self.playermode = 0
-        # This variable is updated by another function when player presses down arrow
-        # Pixels per second downward
         self.playerspeed = 0
-        # This variable controls whether the player is going:
-        # straight = 0
-        # left = 1
-        # right = 2
         self.playerdir = 0
-        # How many rows of tiles the player has passed through
         self.playerpos = 0
 
         self.player_x = X_CENTRE
@@ -197,6 +185,8 @@ class Game:
                 self.dt = self.clock.tick(30) / 1000
                 self.t += self.dt
                 self.events()
+                if not self.gaming:
+                    break
                 self.playerinput(self.dt)
                 self.player()
                 self.update()
@@ -205,6 +195,9 @@ class Game:
             self.end_run()
 
     def events(self):
+        # --- FIXED: Pause button click area bounding box shifted to the left edge ---
+        pause_btn = pygame.Rect(20, 20, 40, 40)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.gaming = False
@@ -212,15 +205,24 @@ class Game:
                 pygame.quit()
                 import sys
                 sys.exit()
+
             if event.type == pygame.KEYDOWN:
                 if self.t > 2:
                     self.tutorial = False
-                keys = pygame.key.get_pressed()
-                if keys[pygame.K_ESCAPE]:
-                    self.gaming = False
+                
+                if event.key == pygame.K_ESCAPE:
+                    status = self.ui.pause_menu()
+                    if status == "exit":
+                        self.gaming = False
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos 
                 print(f"Mouse Clicked at X: {mouse_x}, Y: {mouse_y}")
+
+                if event.button == 1 and pause_btn.collidepoint(event.pos):
+                    status = self.ui.pause_menu()
+                    if status == "exit":
+                        self.gaming = False
 
     def playerinput(self, dt):
         keys = pygame.key.get_pressed()
@@ -309,7 +311,6 @@ class Game:
             else:
                 self.jump_timer = max(0, self.jump_timer - self.dt)
 
-
     def vibes(self, dt):
         pass
 
@@ -355,20 +356,34 @@ class Game:
         self.player_hitbox = hitbox
         self.screen.blit(player_rotated, rect)    
 
+        # --- FIXED: Restored Health indicators back to standard top-right display alignment ---
         for i in range(self.health):
-            self.screen.blit(self.star_img, (WIDTH - (69 + i * 40), 20))
+            self.screen.blit(self.star_img, (self.screen.get_width() - (69 + i * 40), 20))
+
+        # --- FIXED: Render Interactive Pause Button on Left Edge instead ---
+        pause_btn = pygame.Rect(20, 20, 40, 40)
+        mouse_pos = pygame.mouse.get_pos()
+        pause_btn_color = (44, 62, 80) if pause_btn.collidepoint(mouse_pos) else (30, 43, 56)
+        
+        pygame.draw.rect(self.screen, pause_btn_color, pause_btn, border_radius=6)
+        pygame.draw.rect(self.screen, (255, 215, 0), pause_btn, 1, border_radius=6)
+        
+        pygame.draw.line(self.screen, (255, 255, 255), (pause_btn.centerx - 4, pause_btn.top + 12), (pause_btn.centerx - 4, pause_btn.bottom - 12), 3)
+        pygame.draw.line(self.screen, (255, 255, 255), (pause_btn.centerx + 4, pause_btn.top + 12), (pause_btn.centerx + 4, pause_btn.bottom - 12), 3)
 
         if self.inventory:
             powerup = POWERUP_TYPES.get(self.inventory)
             powerup_img = self.assets.get_image(powerup["icon"])
-            powerup_rect = powerup_img.get_rect(topleft=(20, 69))
+            # Push powerup layout down slightly to prevent clipping under the left-side pause button
+            powerup_rect = powerup_img.get_rect(topleft=(20, 75))
             self.screen.blit(powerup_img, powerup_rect)
+            
         clock_surf = self.fonts["highlight"].render(self.gametime(), True, ("#FEFEFE"))
-        clock_rect = clock_surf.get_rect(topright=(WIDTH-20, 69))
+        clock_rect = clock_surf.get_rect(topright=(self.screen.get_width()-20, 69))
         self.screen.blit(clock_surf, clock_rect)
         half_width = rect.width / 2
 
-        pygame.draw.rect(self.screen, "Green", (X_CENTRE + 300, Y_CENTRE - 300 + self.playerspeed, 167, 169)) # placeholder speedometer
+        pygame.draw.rect(self.screen, "Green", (self.screen.get_width() // 2 + 300, self.screen.get_height() // 2 - 300 + self.playerspeed, 167, 169)) 
         if HITBOX:
             lane = self.closest_lane()
             font = pygame.font.SysFont(None, 36)
@@ -396,7 +411,7 @@ class Game:
                     / (self.endpoint - fade_start)
                 )
                 fadefactor = min(max(fadefactor, 0), 1)
-                fadeout_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+                fadeout_surf = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
                 fadeout_surf.fill((200, 200, 200, int(fadefactor * 255)))
                 self.screen.blit(fadeout_surf, (0, 0))
         
@@ -404,11 +419,11 @@ class Game:
             self.show_actions()
         pygame.display.flip()
 
-    def spawn_npc(self): #npc = non player car
+    def spawn_npc(self):
         _, image = self.assets.get_random_car(self.player_model)
         driving_direction = random.choice(["down", "up"])
         if driving_direction == "down":
-            npc_speed = 100 #random.randint(80, 300) #to be modified later
+            npc_speed = 100 
         elif driving_direction == "up":
             npc_speed = -100
         
@@ -476,7 +491,6 @@ class Game:
         now = pygame.time.get_ticks()
         _, char = self.on_road()
 
-        # invincibility timer
         if self.invincible:
             if now - self.flash_timer > self.flash_interval:
                 self.player_opacity = 100 if self.player_opacity > 100 else 255
@@ -488,14 +502,11 @@ class Game:
         else:
             self.player_opacity = 255
 
-        # print(char, self.running_red(char), self.tiler.signals(), self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"])
         if self.running_red(char):
             if self.chased == False:
                 print("[!!!POLICE SIREN SOUNDS!!!]")
                 self.spawn_police()
                 self.chased = True
-            else:
-                pass
 
         for enemy in self.enemies:
             for npc in self.npcs:
@@ -510,27 +521,22 @@ class Game:
                 self.gaming = False
                 return
 
-        # NPC collision
- 
         for npc in self.npcs:
             if not self.player_hitbox or not self.player_rect:
                 continue
  
-            # Damage
             if not self.playerjump:
                 if npc.hitbox and self.player_hitbox.colliderect(npc.hitbox):
                     self.oof()
-                    return  # prevent double-damage in the same frame
+                    return  
  
-            # Stealing
             if self.stealing and self.player_rect.colliderect(npc.rect):
                 stolen = npc.try_steal(self.player_rect)
                 self.sfx("slip", 6)
-                if stolen: # and self.inventory is None:
+                if stolen: 
                     self.inventory = stolen
                     print(f"[POWERUP] Stole: {stolen}")
 
-        # road check
         if self.out_of_bounds(char):
             print("OUCH")
             self.oof()
@@ -580,8 +586,6 @@ class Game:
             self.all_sprites.add(popo)
             self.music[1] = False
             self.vlc("police", 1, True)
-        else:
-            pass
             
     def on_road(self):
         row = self.tile_data[round(self.playerpos + SPACE_ABOVE_PLAYER // TILE_SIZE_Y)]["layout"]
