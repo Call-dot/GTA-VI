@@ -9,6 +9,7 @@ class AssetLoader:
         self.music = {}
         self.sound = {}
         self.car_models = ["red_car", "pink_car", "babyblue_car", "camo_car", "darkblue_car", "name_car", "orange_car", "black_car", "lime_car"]
+        self.trees = ["tree1", "tree2", "tree3", "tree4", "tree5", "snowpine", "snowtree"]
 
     def load_fonts(self):
         font_dir = Path("assets/fonts")
@@ -244,13 +245,13 @@ class AssetLoader:
             image_dir / "deadbush.png"
         ).convert_alpha()
 
-        self.images["snowtree"] = pygame.image.load(
-            image_dir / "snowtree.png"
-        ).convert_alpha()
-        
-        self.images["snowpine"] = pygame.image.load(
-            image_dir / "snowpine.png"
-        ).convert_alpha()
+        def load_tree(tree):
+            self.images[tree] = pygame.image.load(
+                image_dir / f"{tree}.png"
+            ).convert_alpha()
+
+        for tree in self.trees:
+            load_tree(tree)
 
         self.images["policecar"] = pygame.image.load(
             image_dir / "policecar.png"

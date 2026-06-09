@@ -1,6 +1,7 @@
 BIOMES = {
     "badlands": {
         "tree_density": 0.3,
+        "rock_density": 0.8,
         "background_images": [
             "grass_mud",
             "tree1",
@@ -13,6 +14,7 @@ BIOMES = {
 
     "winter": {
         "tree_density": 0.9,
+        "rock_density": 0.2,
         "background_images": [
             "snow",
             "snowpine",
@@ -23,6 +25,7 @@ BIOMES = {
 
     "grassland": {
         "tree_density": 0.4,
+        "rock_density": 0.5,
         "background_images": [
             "grass",
             "grass1",

@@ -4,6 +4,7 @@ from settings import *
 from saves import save_run
 from systems.asset_loader import AssetLoader
 from levels.traffic import Tiler
+from levels.nature import Nature
 from levels.biomes import BIOMES
 from levels.roads import ROAD_TYPES
 from entities.npc import Npc
@@ -31,6 +32,10 @@ class Game:
             self,
             seed=self.seed,
             driving_side="right" if NOT_BRITISH_DRIVING else "left"
+        )
+        self.nature = Nature(
+            self,
+            seed=self.seed
         )
         print(self.seed)
         self.not_british_driving = NOT_BRITISH_DRIVING
@@ -89,8 +94,8 @@ class Game:
         self.scroll_offset = 0
         self.x_offset = 0
         self.ts_down = 0
+        self.current_biome = "badlands"
         self.bg_tiler_init()
-        self.current_biome = BIOMES["badlands"]
 
         self.health = 5
         self.flash_timer = 0
@@ -193,7 +198,6 @@ class Game:
                 self.player()
                 self.update()
                 self.bg_tiler()
-                self.scenery_blitter() 
                 self.draw()
             self.end_run()
 
@@ -334,6 +338,7 @@ class Game:
 
     def draw(self):
         self.screen.fill((100, 100, 100))
+        print(self.trees, self.rocks)
         self.bg_blitter()
         self.all_sprites.draw(self.screen)  
         for npc in self.npcs:
@@ -418,6 +423,8 @@ class Game:
                 fadeout_surf.fill((200, 200, 200, int(fadefactor * 255)))
                 self.screen.blit(fadeout_surf, (0, 0))
         
+        self.scenery_blitter()
+
         if self.tutorial:
             self.show_actions()
         pygame.display.flip()
@@ -711,117 +718,47 @@ class Game:
  
         print(f"[POWERUP] Bomb removed {len(to_kill)} NPCs.")
 
+    def scenery_blitter(self):
+        """
+        Mirrors bg_blitter() — renders trees and rocks only where there is
+        no road tile beneath them.
+        """
+        rows_visible = HEIGHT // TILE_SIZE_Y + 3
+        start_row = max(0, self.playerpos - rows_visible)
+        end_row = self.playerpos + rows_visible
 
-   def scenery_generator(self, type="tree"):
-    """Generate random scenery objects for the current biome"""
-    biome_key = self.current_biome
-    data = BIOMES[biome_key]
-    generated_scenery = []
+        def location_on_road(x, y):
+            """Returns True if screen position (x, y) falls on a road tile."""
+            row_index = int((y + self.playerpos * TILE_SIZE_Y - self.scroll_offset) / TILE_SIZE_Y)
+            if row_index < start_row or row_index >= end_row:
+                return False
+            if row_index >= len(self.tiles):
+                return False
 
-    if type == "tree":
-        count = int(WIDTH * HEIGHT * data["tree_density"] * 0.00005)
-        tree_images = [
-            img for img in data["background_images"]
-            if "tree" in img or "palm" in img
-        ]
-        if tree_images:
-            for _ in range(count):
-                img = random.choice(tree_images)
-                x = random.randint(0, WIDTH)
-                y = random.randint(300, 550)
-                generated_scenery.append({"image": img, "x": x, "y": y})
+            row = self.tiles[row_index]
+            road_width = (len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X)
+            x_start = X_CENTRE - road_width / 2
 
-    elif type == "rocks":
-        count = int(WIDTH * HEIGHT * data["rock_density"] * 0.00005)
-        rock_images = [
-            img for img in data["background_images"]
-            if "rock" in img or "stone" in img
-        ]
-        if rock_images:
-            for _ in range(count):
-                img = random.choice(rock_images)
-                x = random.randint(0, WIDTH)
-                y = random.randint(400, 580)
-                generated_scenery.append({"image": img, "x": x, "y": y})
+            col_index = round((x - x_start) / ROAD_SIZE_X)
+            if 0 <= col_index < len(row):
+                char = row[col_index]
+                # Any non-grass character counts as "road" — skip rendering scenery here
+                return char not in ("_", " ")
+            return False  # outside road bounds = grass = fine to render
 
-    return generated_scenery
+        for obj in self.trees:
+            if location_on_road(obj["x"], obj["y"]):
+                continue
+            img = self.assets.get_image(obj["image"])
+            img_rect = img.get_rect(center=(obj["x"], obj["y"]))
+            self.screen.blit(img, img_rect)
 
-def scenery_tiler(self):
-    """
-    Mirrors bg_tiler() — scrolls scenery objects with the world and
-    generates new ones as the player moves forward.
-    Trees saved to self.trees, rocks to self.rocks.
-    """
-    # Shift existing scenery up as the world scrolls
-    offset = self.playerspeed * self.dt
-
-    for obj in self.trees:
-        obj["y"] -= offset  # objects scroll upward as player drives
-
-    for obj in self.rocks:
-        obj["y"] -= offset
-
-    # Cull objects that have scrolled off the top of the screen
-    self.trees = [obj for obj in self.trees if obj["y"] > -100]
-    self.rocks = [obj for obj in self.rocks if obj["y"] > -100]
-
-    # Spawn new scenery at the bottom as we scroll
-    # Tie spawn rate loosely to player speed so faster = more variety
-    spawn_chance = self.playerspeed * self.dt * 0.05
-
-    if random.random() < spawn_chance:
-        new_trees = self.scenery_generator("tree")
-        for obj in new_trees:
-            obj["y"] = HEIGHT + random.randint(0, 100)  # spawn below screen
-        self.trees.extend(new_trees)
-
-    if random.random() < spawn_chance * 0.5:  # rocks are rarer
-        new_rocks = self.scenery_generator("rocks")
-        for obj in new_rocks:
-            obj["y"] = HEIGHT + random.randint(0, 100)
-        self.rocks.extend(new_rocks)
-
-def scenery_blitter(self):
-    """
-    Mirrors bg_blitter() — renders trees and rocks only where there is
-    no road tile beneath them.
-    """
-    rows_visible = HEIGHT // TILE_SIZE_Y + 3
-    start_row = max(0, self.playerpos - rows_visible)
-    end_row = self.playerpos + rows_visible
-
-    def is_on_road(x, y):
-        """Returns True if screen position (x, y) falls on a road tile."""
-        row_index = int((y + self.playerpos * TILE_SIZE_Y - self.scroll_offset) / TILE_SIZE_Y)
-        if row_index < start_row or row_index >= end_row:
-            return False
-        if row_index >= len(self.tiles):
-            return False
-
-        row = self.tiles[row_index]
-        road_width = (len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X)
-        x_start = X_CENTRE - road_width / 2
-
-        col_index = round((x - x_start) / ROAD_SIZE_X)
-        if 0 <= col_index < len(row):
-            char = row[col_index]
-            # Any non-grass character counts as "road" — skip rendering scenery here
-            return char not in ("_", " ")
-        return False  # outside road bounds = grass = fine to render
-
-    for obj in self.trees:
-        if is_on_road(obj["x"], obj["y"]):
-            continue
-        img = self.assets.get_image(obj["image"])
-        img_rect = img.get_rect(center=(obj["x"], obj["y"]))
-        self.screen.blit(img, img_rect)
-
-    for obj in self.rocks:
-        if is_on_road(obj["x"], obj["y"]):
-            continue
-        img = self.assets.get_image(obj["image"])
-        img_rect = img.get_rect(center=(obj["x"], obj["y"]))
-        self.screen.blit(img, img_rect)
+        for obj in self.rocks:
+            if location_on_road(obj["x"], obj["y"]):
+                continue
+            img = self.assets.get_image(obj["image"])
+            img_rect = img.get_rect(center=(obj["x"], obj["y"]))
+            self.screen.blit(img, img_rect)
 
     def bg_generator(self, type=None):
         """Generates strings for bgtiler"""
@@ -847,6 +784,7 @@ def scenery_blitter(self):
         #         return "_-./.|./.C_"
 
     def bg_tiler(self):
+        self.nature.scenery_tiler()
         """Generates a text file which represents the road that gets sent to bg_blitter"""
         self.scroll_offset -= self.playerspeed * self.dt
 
@@ -875,8 +813,8 @@ def scenery_blitter(self):
         if DEBUG:
             print(self.weathering)
             
-        self.trees = self.scenery_generator("tree")
-        self.rocks = self.scenery_generator("rocks")
+        self.trees = self.nature.scenery_generator("tree")
+        self.rocks = self.nature.scenery_generator("rocks")
 
     def bg_blitter(self, tiles=None):
         """Renders the text from bg_tiler into road images"""
