@@ -128,7 +128,7 @@ class Game:
         self.igt = 0
         self.endpoint = None
         self.success = False
-        self.current_biome = random.choice(list(BIOMES.values()))
+        self.current_biome = "badlands" # random.choice(list(BIOMES.values()))
         self.respect = False
 
         self.player_x = X_CENTRE
@@ -759,6 +759,44 @@ class Game:
             img = self.assets.get_image(obj["image"])
             img_rect = img.get_rect(center=(obj["x"], obj["y"]-50))
             self.screen.blit(img, img_rect)
+    
+    def terrain_blitter(self):
+        data = self.current_biome
+        bg_images = data.get("background_images", [])
+        if not bg_images:
+            return
+
+        scroll = (self.playerpos * TILE_SIZE_Y + self.scroll_offset) % 64
+
+        img0 = self.assets.get_image(bg_images[0])
+        tile_w = img0.get_width()
+        tile_h = img0.get_height()
+
+        cols = WIDTH // tile_w + 2
+        rows = HEIGHT // tile_h + 2
+
+        for row in range(rows):
+            for col in range(cols):
+                x = col * tile_w
+                y = row * tile_h - scroll
+                self.screen.blit(img0, (x, y))
+
+        if len(bg_images) > 1:
+            import math
+            blend = (math.sin(self.t * 0.3) + 1) / 2
+            alpha = int(blend * 180)
+
+            img1 = self.assets.get_image(bg_images[1])
+            overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+
+            for row in range(rows):
+                for col in range(cols):
+                    x = col * tile_w
+                    y = row * tile_h - scroll
+                    overlay.blit(img1, (x, y))
+
+            overlay.set_alpha(alpha)
+            self.screen.blit(overlay, (0, 0))
 
     def bg_generator(self, type=None):
         """Generates strings for bgtiler"""
