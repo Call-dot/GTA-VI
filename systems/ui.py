@@ -129,57 +129,41 @@ class Ui:
             self.game.clock.tick(30)
     
     def pause_menu(self):
-        """Displays a popup overlay over the current game state when paused."""
+        """Displays an extra large popup overlay over the current game state when paused."""
         paused = True
         
         WIDTH  = self.game.screen.get_width()
         HEIGHT = self.game.screen.get_height()
         X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
 
-        # --- Create a Semi-Transparent Overlay Blur ---
-        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 150)) # Black color with alpha transparency
-
-        # --- Popup Box Dimensions ---
-        box_w, box_h = 360, 240
+        box_w, box_h = 540, 320
         popup_rect = pygame.Rect(X_CENTRE - box_w // 2, Y_CENTRE - box_h // 2, box_w, box_h)
 
-        # --- Button Layouts ---
-        btn_w, btn_h = 260, 45
-        continue_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 20, btn_w, btn_h)
-        exit_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 40, btn_w, btn_h)
+        btn_w, btn_h = 380, 55
+        continue_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 5, btn_w, btn_h)
+        exit_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 65, btn_w, btn_h)
 
         while paused:
             mouse_pos = pygame.mouse.get_pos()
             
-            # Draw the darkened overlay directly over the frozen gameplay graphics
-            self.game.screen.blit(overlay, (0, 0))
-
-            # Draw the popup window background card
             pygame.draw.rect(self.game.screen, (30, 43, 56), popup_rect, border_radius=12)
             pygame.draw.rect(self.game.screen, (255, 215, 0), popup_rect, 2, border_radius=12) # Gold border
 
-            # Title text inside the popup box
             title_surf = self.fonts["header"].render("GAME PAUSED", True, (255, 255, 255))
-            self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 70)))
+            self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 90)))
 
-            # Hover color checks
             continue_color = (0, 200, 100) if continue_btn.collidepoint(mouse_pos) else (44, 62, 80)
             exit_color     = (200, 50, 50)  if exit_btn.collidepoint(mouse_pos)     else (44, 62, 80)
 
-            # Draw Buttons
             pygame.draw.rect(self.game.screen, continue_color, continue_btn, border_radius=6)
             pygame.draw.rect(self.game.screen, exit_color, exit_btn, border_radius=6)
 
-            # Draw Button Labels
             cont_txt = self.fonts["body"].render("CONTINUE", True, (255, 255, 255))
             self.game.screen.blit(cont_txt, cont_txt.get_rect(center=continue_btn.center))
 
-            # --- FIXED: Variable name matched properly here ---
             exit_txt = self.fonts["body"].render("EXIT TO MENU", True, (255, 255, 255))
             self.game.screen.blit(exit_txt, exit_txt.get_rect(center=exit_btn.center))
 
-            # Event loop monitoring inside the pause state
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
