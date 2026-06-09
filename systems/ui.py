@@ -765,8 +765,9 @@ class Ui:
 
         stats_btn_w, stats_btn_h = 160, 50
         stats_btn_rect = pygame.Rect(X_CENTRE - stats_btn_w / 2, HEIGHT - 20 - stats_btn_h, stats_btn_w, stats_btn_h)
-        stats_font    = pygame.font.SysFont("Arial", 24, bold=True)
-        car_name_font = pygame.font.SysFont("Arial", 18, bold=True)
+        
+        stats_font    = self.fonts["body"] 
+        car_name_font = self.fonts["caption"] 
 
         def draw_everything():
             self.game.screen.fill("#1B1B1B")
@@ -906,11 +907,12 @@ class Ui:
 
     def stats_menu(self):
         viewing_stats = True
-        title_font = pygame.font.SysFont("Arial", 45, bold=True)
-        label_font = pygame.font.SysFont("Arial", 26, bold=True)
-        value_font = pygame.font.SysFont("Arial", 22, bold=False)
-        back_font  = pygame.font.SysFont("Arial", 24, bold=True)
-        grid_font  = pygame.font.SysFont("Arial", 14, bold=True)
+        
+        title_font = self.fonts["highlight"]  
+        label_font = self.fonts["body"]       
+        value_font = self.fonts["caption"]    
+        back_font  = self.fonts["body"]       
+        grid_font  = self.fonts["caption"]    
 
         WIDTH    = self.game.screen.get_width()
         HEIGHT   = self.game.screen.get_height()
@@ -1009,23 +1011,23 @@ class Ui:
                 self.game.screen.blit(val_surf, (stats_x + bar_max_w - val_surf.get_width(), curr_y + 4))
 
                 if row["type"] == "bar":
-                    track = pygame.Rect(stats_x, curr_y + 36, bar_max_w, bar_h)
+                    track = pygame.Rect(stats_x, curr_y + 50, bar_max_w, bar_h)
                     pygame.draw.rect(self.game.screen, (30, 39, 46), track, border_radius=6)
 
                     fill_w    = int(bar_max_w * (row["val"] / row["max"]))
-                    fill_rect = pygame.Rect(stats_x, curr_y + 36, fill_w, bar_h)
+                    fill_rect = pygame.Rect(stats_x, curr_y + 50, fill_w, bar_h)
                     pygame.draw.rect(self.game.screen, row["color"], fill_rect, border_radius=6)
 
                 elif row["type"] == "stars":
                     star_img  = self.game.assets.get_image('star')
-                    star_img  = pygame.transform.scale(star_img, (45, 45))
+                    star_img  = pygame.transform.scale(star_img, (35, 35))
                     star_spacing = 40
                     for star_idx in range(row["val"]):
                         sx = stats_x + (star_idx * star_spacing)
-                        sy = curr_y + 34
+                        sy = curr_y + 40
                         self.game.screen.blit(star_img, (sx, sy))
 
-            align_y = stats_y + (3 * row_gap)
+            align_y  = stats_y + (3 * row_gap)
 
             align_lbl = label_font.render("Auto Align", True, (255, 255, 255))
             self.game.screen.blit(align_lbl, (stats_x, align_y))
@@ -1034,8 +1036,8 @@ class Ui:
             status_text = "ON" if is_on else "OFF"
             status_color= (46, 204, 113) if is_on else (231, 76, 60)
 
-            status_surf = title_font.render(status_text, True, status_color)
-            self.game.screen.blit(status_surf, (stats_x, align_y + 32))
+            status_surf = label_font.render(status_text, True, status_color)
+            self.game.screen.blit(status_surf, (stats_x  , align_y + 35))
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
