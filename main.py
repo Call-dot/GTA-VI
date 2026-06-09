@@ -1,6 +1,7 @@
 import pygame
 import random
 from settings import *
+from saves import save_run
 from systems.asset_loader import AssetLoader
 from levels.traffic import Tiler
 from levels.biomes import BIOMES
@@ -24,13 +25,14 @@ class Game:
         self.all_sprites = pygame.sprite.Group()
         self.npcs = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
-        random.seed(SEED)
+        self.seed = random.randrange(2147483647)
+        random.seed(self.seed)
         self.tiler = Tiler(
             self,
-            seed=SEED,
+            seed=self.seed,
             driving_side="right" if NOT_BRITISH_DRIVING else "left"
         )
-        print(SEED)
+        print(self.seed)
         self.not_british_driving = NOT_BRITISH_DRIVING
         self.igt = 0
         self.success = False
@@ -177,6 +179,9 @@ class Game:
             self.respect = self.ui.outro_screen(self.igt)
         else:
             self.respect = False
+
+        save_run(self)
+
         self.ui.ending(self.respect)
         print(self.tiles)
         self.player_opacity = 255
@@ -620,7 +625,6 @@ class Game:
         closest_distance = float("inf")
 
         for lane_index in current_row["lanes"]:
-
             lane_x = self.lane_to_x(x_start, lane_index)
             distance = abs(lane_x - self.player_x)
 
@@ -973,7 +977,7 @@ class Game:
         return f"{hours}:{minutes:02d}:{seconds:02d}am"
 
     def lane_to_x(self, x_start, lane_index):
-        return x_start + lane_index * ROAD_SIZE_X
+        return x_start + int(lane_index) * ROAD_SIZE_X
     
     def x_to_lane(self, x, x_start):
         return round((x - x_start) / ROAD_SIZE_X)

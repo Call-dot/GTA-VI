@@ -41,7 +41,7 @@ class Tiler:
                 print("OG road:", self.current_road["layout"], exit_rows)
                 if self.almost_there:
                     self.intersecting = True
-                    sideroad_size = random.choice([1, 3, 5])
+                    sideroad_size = self.random.choice([1, 3, 5])
 
                     self.intersection.extend(exit_rows)
                     self.intersection.extend(self.sideroad(sideroad_size))
@@ -57,7 +57,7 @@ class Tiler:
                     entrance_rows = self.entrance()
                     print("new road:", self.current_road["layout"], entrance_rows)
                     self.intersecting = True
-                    sideroad_size = random.choice([1, 3, 5])
+                    sideroad_size = self.random.choice([1, 3, 5])
                     print(sideroad_size)
                     self.intersection.extend(exit_rows)
                     self.intersection.extend(self.sideroad(sideroad_size))
