@@ -128,6 +128,7 @@ class Game:
         self.igt = 0
         self.endpoint = None
         self.success = False
+        self.current_biome = random.choice(list(BIOMES.values()))
         self.respect = False
 
         self.player_x = X_CENTRE
@@ -338,8 +339,9 @@ class Game:
 
     def draw(self):
         self.screen.fill(BIOMES[self.current_biome]["vibe"])
-        print(self.trees, self.rocks)
+        self.terrain_blitter()
         self.bg_blitter()
+        self.scenery_blitter() 
         self.all_sprites.draw(self.screen)  
         for npc in self.npcs:
             npc.draw_powerup_icon(self.screen)
@@ -805,7 +807,6 @@ class Game:
         rows_needed = HEIGHT // TILE_SIZE_Y + 5
         for _ in range(rows_needed):
             row = self.tiler.next_row()
-
             self.tiles.append(row["layout"])
             self.tile_data.append(row)
             self.weathering.append(self.bg_generator("weathering"))
