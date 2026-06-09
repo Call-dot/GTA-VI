@@ -88,6 +88,7 @@ class Game:
         self.player_rect = None
         self.player_hitbox = None
         self.playerangle = 0
+        self.playerjump = False
         
         # Utils
         self.tiles = []
@@ -139,6 +140,8 @@ class Game:
         self.player_vx = 0
         self.player_rect = None
         self.player_hitbox = None
+        self.playerjump = False
+        self.jump_timer = 0.0
         self.playerangle = 0
         self.tutorial = True
         self.tiler.almost_there = False
@@ -194,7 +197,6 @@ class Game:
                 self.update()
                 self.bg_tiler()
                 self.draw()
-                print(self.playerpos, self.endpoint)
             self.end_run()
 
     def events(self):
@@ -217,11 +219,12 @@ class Game:
 
     def playerinput(self, dt):
         keys = pygame.key.get_pressed()
+        self.playerjump = keys[pygame.K_SPACE]
         
         if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            self.playermode = 1
+            self.playermode = 1 if not self.playerjump else 0
         elif keys[pygame.K_UP] or keys[pygame.K_w]:
-            self.playermode = 2
+            self.playermode = 2 if not self.playerjump else 0
         else:
             self.playermode = 0
     
@@ -265,19 +268,23 @@ class Game:
         elif self.playermode == 2:
             self.reverse(BRAKE_POWER)
         else:
-            self.decelerate(FRICTION)
-
-        if self.playerdir == 1:
-            target_v = -MAX_TURN_SPEED
-        elif self.playerdir == 2:
-            target_v = MAX_TURN_SPEED
-        else:
-            if AUTO_LANE_ALIGN:
-                target_v = 0
+            if self.playerjump:
+                self.decelerate(AIR_RESISTANCE)
             else:
-                target_v = self.player_vx
+                self.decelerate(FRICTION)
+
+        if not self.playerjump:
+            if self.playerdir == 1:
+                target_v = -MAX_TURN_SPEED
+            elif self.playerdir == 2:
+                target_v = MAX_TURN_SPEED
+            else:
+                if AUTO_LANE_ALIGN:
+                    target_v = 0
+                else:
+                    target_v = self.player_vx
        
-        self.player_vx += (target_v - self.player_vx) * HANDLING * self.dt 
+            self.player_vx += (target_v - self.player_vx) * HANDLING * self.dt 
         if self.speeding:
             self.player_vx *= (self.playerspeed / ULTRA_SPEED)
         else:
@@ -288,6 +295,15 @@ class Game:
             self.player_x = -40
         elif self.player_x < -50:
             self.player_x = WIDTH+40
+
+        if not self.playerjump:
+            self.jump_timer = 0
+        else:
+            if self.jump_timer <= 0:
+                self.jump_timer = AIRTIME
+            else:
+                self.jump_timer = max(0, self.jump_timer - self.dt)
+
 
     def vibes(self, dt):
         pass
@@ -316,11 +332,20 @@ class Game:
 
         self.player_img.set_alpha(self.player_opacity)
         self.playerangle = self.player_vx * 0.05
-        player_rotated = pygame.transform.rotate(self.player_img, self.playerangle + 180)
+
+        player_rotated = self.player_img
+        if self.playerjump:
+            og_width = player_rotated.get_width()
+            og_height = player_rotated.get_height()
+            inflation = -0.42 * self.jump_timer * (self.jump_timer - AIRTIME) + 1
+            player_rotated = pygame.transform.smoothscale(player_rotated, (og_width*inflation, og_height*inflation))
+        player_rotated = pygame.transform.rotate(player_rotated, self.playerangle + 180)
         rect = player_rotated.get_rect(
             center=(self.player_x, self.player_y)
         )
         hitbox = rect.inflate(-HITBOX_TOLERANCE, -HITBOX_TOLERANCE)
+        print(self.playerjump, self.jump_timer)
+        
         self.player_rect = rect
         self.player_hitbox = hitbox
         self.screen.blit(player_rotated, rect)    
@@ -468,6 +493,13 @@ class Game:
                 pass
 
         for enemy in self.enemies:
+            for npc in self.npcs:
+                if npc.hitbox and enemy.rect.colliderect(npc.hitbox):
+                    npc.boom = {
+                        "origin_x": enemy.world_x,
+                        "origin_y": enemy.world_y
+                    }
+
             if SPACE_ABOVE_PLAYER - CATCH_DISTANCE < enemy.world_y:
                 self.sfx("kid_slap", 4)
                 self.gaming = False
@@ -480,9 +512,10 @@ class Game:
                 continue
  
             # Damage
-            if npc.hitbox and self.player_hitbox.colliderect(npc.hitbox):
-                self.oof()
-                return  # prevent double-damage in the same frame
+            if not self.playerjump:
+                if npc.hitbox and self.player_hitbox.colliderect(npc.hitbox):
+                    self.oof()
+                    return  # prevent double-damage in the same frame
  
             # Stealing
             if self.stealing and self.player_rect.colliderect(npc.rect):
@@ -540,6 +573,7 @@ class Game:
             )
             self.enemies.add(popo)
             self.all_sprites.add(popo)
+            self.music[1] = False
             self.vlc("police", 1, True)
         else:
             pass
@@ -637,6 +671,8 @@ class Game:
         print("[POWERUP] Speed boost activated!")
  
     def on_speed_powerup_end(self):
+        if self.playerspeed > MAX_SPEED:
+            self.playerspeed = MAX_SPEED
         self.music[1] = False
         print("[POWERUP] Speed boost ended.")
 

@@ -10,10 +10,12 @@ SEED = random.randrange(2147483647)
 SPACE_ABOVE_PLAYER = 420
 BRAKE_POWER = 2
 FRICTION = 0.67 #px/s^2
+AIR_RESISTANCE = 0.08
 MAX_SPEED = 420
 MAX_TURN_SPEED = 420      # px/s
 REVERSE_SPEED = -69
 HANDLING = 5              # larger = snappier
+AIRTIME = 3
 AUTO_LANE_ALIGN = True
 DEBUG = False
 HITBOX = True

@@ -42,16 +42,21 @@ class Police(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.base_image, self.angle)
 
         # delete when offscreen
-        if self.rect.top > self.game.height + 169:
+        if (
+            self.rect.top > self.game.height + 169 or
+            self.rect.bottom < -169
+        ):
             self.game.chased = False
+            self.game.music[1] = False
             self.kill()
 
     def yeet(self, origin):
         dx = origin["origin_x"] - self.world_x
         dy = origin["origin_y"] - self.world_y
+        dy = dy if dy else 1
         self.hitbox = None
         self.world_x -= BLAST_POWER * dx / dy
-        self.world_y -= BLAST_POWER * dy / dx
+        self.world_y -= BLAST_POWER
         self.rect.center = (self.world_x, self.world_y)
         self.angle += 2 * dy / dx
         self.image = pygame.transform.rotate(self.base_image, self.angle)
@@ -59,4 +64,6 @@ class Police(pygame.sprite.Sprite):
             self.world_x < -200 or self.world_x > WIDTH+200 
             or self.world_y < -200 or self.world_y > HEIGHT+200
         ):
+            self.game.chased = False
+            self.game.music[1] = False
             self.kill()

@@ -319,7 +319,7 @@ class AssetLoader:
         self.sound["boom"] = pygame.mixer.Sound(
             sound_dir / "vine-boom.mp3"
         )
-        self.sound["boom"].set_volume(0.5)
+        self.sound["boom"].set_volume(0.8)
 
     def get_font(self, name):
         return self.fonts[name]
