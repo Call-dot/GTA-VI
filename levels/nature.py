@@ -17,8 +17,8 @@ class Nature:
         if type == "tree":
             count = int(WIDTH * HEIGHT * data["tree_density"] * 0.00005)
             tree_images = [
-                img for img in data["background_images"]
-                if "tree" in img or "palm" in img
+                img for img in data["scenery_images"]
+                # if "tree" in img or "palm" in img
             ]
             if tree_images:
                 for _ in range(count):
@@ -57,13 +57,13 @@ class Nature:
         for obj in self.game.rocks:
             obj["y"] -= offset
 
-        # Cull objects that have scrolled off the top of the screen
-        self.game.trees = [obj for obj in self.game.trees if obj["y"] > -100]
-        self.game.rocks = [obj for obj in self.game.rocks if obj["y"] > -100]
+        # (don't) Cull objects that have scrolled off the top of the screen
+        # self.game.trees = [obj for obj in self.game.trees if obj["y"] > -100]
+        # self.game.rocks = [obj for obj in self.game.rocks if obj["y"] > -100]
 
         # Spawn new scenery at the bottom as we scroll
         # Tie spawn rate loosely to player speed so faster = more variety
-        spawn_chance = self.game.playerspeed * self.game.dt * 0.05
+        spawn_chance = self.game.playerspeed * self.game.dt * 0.005
 
         if self.random.random() < spawn_chance:
             new_trees = self.scenery_generator("tree")

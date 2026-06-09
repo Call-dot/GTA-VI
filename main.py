@@ -337,7 +337,7 @@ class Game:
         self.tick_powerups(self.dt)
 
     def draw(self):
-        self.screen.fill((100, 100, 100))
+        self.screen.fill(BIOMES[self.current_biome]["vibe"])
         print(self.trees, self.rocks)
         self.bg_blitter()
         self.all_sprites.draw(self.screen)  
@@ -364,11 +364,11 @@ class Game:
         self.player_hitbox = hitbox
         self.screen.blit(player_rotated, rect)    
 
-        # --- FIXED: Restored Health indicators back to standard top-right display alignment ---
+        self.scenery_blitter()
+
         for i in range(self.health):
             self.screen.blit(self.star_img, (self.screen.get_width() - (69 + i * 40), 20))
 
-        # --- FIXED: Render Interactive Pause Button on Left Edge instead ---
         pause_btn = pygame.Rect(20, 20, 40, 40)
         mouse_pos = pygame.mouse.get_pos()
         pause_btn_color = (44, 62, 80) if pause_btn.collidepoint(mouse_pos) else (30, 43, 56)
@@ -422,8 +422,6 @@ class Game:
                 fadeout_surf = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
                 fadeout_surf.fill((200, 200, 200, int(fadefactor * 255)))
                 self.screen.blit(fadeout_surf, (0, 0))
-        
-        self.scenery_blitter()
 
         if self.tutorial:
             self.show_actions()
@@ -731,7 +729,7 @@ class Game:
             """Returns True if screen position (x, y) falls on a road tile."""
             row_index = int((y + self.playerpos * TILE_SIZE_Y - self.scroll_offset) / TILE_SIZE_Y)
             if row_index < start_row or row_index >= end_row:
-                return False
+                return True
             if row_index >= len(self.tiles):
                 return False
 
@@ -750,14 +748,14 @@ class Game:
             if location_on_road(obj["x"], obj["y"]):
                 continue
             img = self.assets.get_image(obj["image"])
-            img_rect = img.get_rect(center=(obj["x"], obj["y"]))
+            img_rect = img.get_rect(center=(obj["x"], obj["y"]-50))
             self.screen.blit(img, img_rect)
 
         for obj in self.rocks:
             if location_on_road(obj["x"], obj["y"]):
                 continue
             img = self.assets.get_image(obj["image"])
-            img_rect = img.get_rect(center=(obj["x"], obj["y"]))
+            img_rect = img.get_rect(center=(obj["x"], obj["y"]-50))
             self.screen.blit(img, img_rect)
 
     def bg_generator(self, type=None):
@@ -785,6 +783,7 @@ class Game:
 
     def bg_tiler(self):
         self.nature.scenery_tiler()
+
         """Generates a text file which represents the road that gets sent to bg_blitter"""
         self.scroll_offset -= self.playerspeed * self.dt
 

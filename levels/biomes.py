@@ -1,5 +1,6 @@
 BIOMES = {
     "badlands": {
+        "vibe": ("#CA571E"),
         "tree_density": 0.3,
         "rock_density": 0.8,
         "background_images": [
@@ -14,6 +15,7 @@ BIOMES = {
         "road_weathering": 0.2
     },
     "winter": {
+        "vibe": ("#BEEFED"),
         "tree_density": 0.9,
         "rock_density": 0.2,
         "background_images": [
@@ -27,6 +29,7 @@ BIOMES = {
         "road_weathering": 0.5
     },
     "grassland": {
+        "vibe": ("#BABB1E"),
         "tree_density": 0.4,
         "rock_density": 0.5,
         "background_images": [
