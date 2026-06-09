@@ -46,58 +46,62 @@ class Ui:
         self.game.music[1] = False
         self.game.vlc("title", -1, False)
 
-        btn_w, btn_h = 240, 55
-        new_game_btn  = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 105, btn_w, btn_h)
-        load_game_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 40,  btn_w, btn_h)
-        saves_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 25,  btn_w, btn_h)
-        settings_btn  = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 90,  btn_w, btn_h)
-
-        exit_btn_w, exit_btn_h = 220, 50
-        exit_game_btn = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
-
-        def draw_main_menu_content():
-            self.game.screen.fill("#1B1B1B")
-
-            title_surf = self.fonts["title"].render("GRAND THEFT AUTO VI", True, (255, 215, 0))
-            title_rect = title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 175))
-            self.game.screen.blit(title_surf, title_rect)
-
-            mouse_pos = pygame.mouse.get_pos()
-
-            new_color      = (0, 200, 100)   if new_game_btn.collidepoint(mouse_pos)  else (44, 62, 80)
-            load_color     = (52, 152, 219)  if load_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
-            saves_color    = (230, 126, 34)  if saves_btn.collidepoint(mouse_pos)     else (44, 62, 80)
-            settings_color = (155, 89, 182)  if settings_btn.collidepoint(mouse_pos)  else (44, 62, 80)
-            exit_color     = (130, 20, 20)   if exit_game_btn.collidepoint(mouse_pos) else (200, 50, 50)
-
-            pygame.draw.rect(self.game.screen, new_color,      new_game_btn,  border_radius=8)
-            pygame.draw.rect(self.game.screen, load_color,     load_game_btn, border_radius=8)
-            pygame.draw.rect(self.game.screen, saves_color,    saves_btn,     border_radius=8)
-            pygame.draw.rect(self.game.screen, settings_color, settings_btn,  border_radius=8)
-            pygame.draw.rect(self.game.screen, exit_color,     exit_game_btn, border_radius=6)
-
-            self.game.screen.blit(
-                self.fonts["body"].render("NEW GAME",    True, (255, 255, 255)),
-                self.fonts["body"].render("NEW GAME",    True, (255, 255, 255)).get_rect(center=new_game_btn.center))
-            self.game.screen.blit(
-                self.fonts["body"].render("LOAD GAME",   True, (255, 255, 255)),
-                self.fonts["body"].render("LOAD GAME",   True, (255, 255, 255)).get_rect(center=load_game_btn.center))
-            self.game.screen.blit(
-                self.fonts["body"].render("SAVES",       True, (255, 255, 255)),
-                self.fonts["body"].render("SAVES",       True, (255, 255, 255)).get_rect(center=saves_btn.center))
-            self.game.screen.blit(
-                self.fonts["body"].render("SETTINGS",    True, (255, 255, 255)),
-                self.fonts["body"].render("SETTINGS",    True, (255, 255, 255)).get_rect(center=settings_btn.center))
-            self.game.screen.blit(
-                self.fonts["body"].render("EXIT GAME",   True, (255, 255, 255)),
-                self.fonts["body"].render("EXIT GAME",   True, (255, 255, 255)).get_rect(center=exit_game_btn.center))
-
         while menu_running:
+            WIDTH  = self.game.screen.get_width()
+            HEIGHT = self.game.screen.get_height()
+            X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
+
+            btn_w, btn_h = 240, 55
+            new_game_btn  = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 105, btn_w, btn_h)
+            load_game_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 40,  btn_w, btn_h)
+            saves_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 25,  btn_w, btn_h)
+            settings_btn  = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 90,  btn_w, btn_h)
+
+            exit_btn_w, exit_btn_h = 220, 50
+            exit_game_btn = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
+
+            def draw_main_menu_content():
+                self.game.screen.fill("#1B1B1B")
+
+                title_surf = self.fonts["title"].render("GRAND THEFT AUTO VI", True, (255, 215, 0))
+                title_rect = title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 175))
+                self.game.screen.blit(title_surf, title_rect)
+
+                mouse_pos = pygame.mouse.get_pos()
+
+                new_color      = (0, 200, 100)   if new_game_btn.collidepoint(mouse_pos)  else (44, 62, 80)
+                load_color     = (52, 152, 219)  if load_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
+                saves_color    = (230, 126, 34)  if saves_btn.collidepoint(mouse_pos)     else (44, 62, 80)
+                settings_color = (155, 89, 182)  if settings_btn.collidepoint(mouse_pos)  else (44, 62, 80)
+                exit_color     = (130, 20, 20)   if exit_game_btn.collidepoint(mouse_pos) else (200, 50, 50)
+
+                pygame.draw.rect(self.game.screen, new_color,      new_game_btn,  border_radius=8)
+                pygame.draw.rect(self.game.screen, load_color,     load_game_btn, border_radius=8)
+                pygame.draw.rect(self.game.screen, saves_color,    saves_btn,     border_radius=8)
+                pygame.draw.rect(self.game.screen, settings_color, settings_btn,  border_radius=8)
+                pygame.draw.rect(self.game.screen, exit_color,     exit_game_btn, border_radius=6)
+
+                new_text = self.fonts["body"].render("NEW GAME", True, (255, 255, 255))
+                self.game.screen.blit(new_text, new_text.get_rect(center=new_game_btn.center))
+
+                load_text = self.fonts["body"].render("LOAD GAME", True, (255, 255, 255))
+                self.game.screen.blit(load_text, load_text.get_rect(center=load_game_btn.center))
+
+                saves_text = self.fonts["body"].render("SAVES", True, (255, 255, 255))
+                self.game.screen.blit(saves_text, saves_text.get_rect(center=saves_btn.center))
+
+                settings_text = self.fonts["body"].render("SETTINGS", True, (255, 255, 255))
+                self.game.screen.blit(settings_text, settings_text.get_rect(center=settings_btn.center))
+
+                exit_text = self.fonts["body"].render("EXIT GAME", True, (255, 255, 255))
+                self.game.screen.blit(exit_text, exit_text.get_rect(center=exit_game_btn.center))
+
             draw_main_menu_content()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
+                    import sys
                     sys.exit()
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -462,53 +466,100 @@ class Ui:
         # ── show end screen ───────────────────────────────────────────
         g.end_run()
 
-    # ── SETTINGS MENU ────────────────────────────────────────────────────────
 
     def settings_menu(self):
-        """Displays a simple settings menu featuring the interactive volume slider."""
+        """Displays a simple settings menu featuring the interactive volume slider and fullscreen toggle."""
         in_settings = True
 
-        slider_w, slider_h = 300, 12
-        volume_slider = VolumeSlider(
-            x=X_CENTRE - slider_w // 2,
-            y=Y_CENTRE,
-            width=slider_w,
-            height=slider_h,
-            initial_val=pygame.mixer.music.get_volume()
-        )
-
-        back_btn_w, back_btn_h = 160, 50
-        back_btn = pygame.Rect(20, HEIGHT - 20 - back_btn_h, back_btn_w, back_btn_h)
-
         while in_settings:
+            # --- Dynamic Dimension Evaluation ---
+            # Re-fetch every loop iteration so elements rearrange instantly when window mode alters
+            WIDTH  = self.game.screen.get_width()
+            HEIGHT = self.game.screen.get_height()
+            X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
+
+            # --- Interactive Volume Slider Setup ---
+            slider_w, slider_h = 300, 12
+            volume_slider = VolumeSlider(
+                x=X_CENTRE - slider_w // 2,
+                y=Y_CENTRE - 20,  
+                width=slider_w,
+                height=slider_h,
+                initial_val=pygame.mixer.music.get_volume()
+            )
+
+            # --- UI Component Targets ---
+            fullscreen_btn = pygame.Rect(X_CENTRE - 120, Y_CENTRE + 50, 240, 50)
+            
+            back_btn_w, back_btn_h = 160, 50
+            back_btn = pygame.Rect(20, HEIGHT - 20 - back_btn_h, back_btn_w, back_btn_h)
+
             mouse_pos = pygame.mouse.get_pos()
             self.game.screen.fill("#1B1B1B")
 
+            # 1. Title Positioning
             title_surf = self.fonts["header"].render("SETTINGS", True, (255, 255, 255))
-            self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 100)))
+            self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 120)))
 
+            # 2. Volume Component Drawing
             vol_pct  = int(volume_slider.value * 100)
             vol_surf = self.fonts["body"].render(f"MUSIC VOLUME: {vol_pct}%", True, (255, 255, 255))
-            self.game.screen.blit(vol_surf, vol_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 30)))
-
+            self.game.screen.blit(vol_surf, vol_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 50)))
+            
             volume_slider.draw(self.game.screen)
 
+            # 3. Fullscreen Button Rendering
+            is_fs = getattr(self.game, 'is_fullscreen', False)
+            fs_text_str = "WINDOW MODE" if is_fs else "FULLSCREEN"
+            
+            fs_bg_color = (44, 62, 80) if fullscreen_btn.collidepoint(mouse_pos) else (30, 43, 56)
+            pygame.draw.rect(self.game.screen, fs_bg_color, fullscreen_btn, border_radius=6)
+            
+            fs_text_surf = self.fonts["body"].render(fs_text_str, True, (255, 255, 255))
+            self.game.screen.blit(fs_text_surf, fs_text_surf.get_rect(center=fullscreen_btn.center))
+
+            # 4. Back Button Rendering
             back_bg_color = (44, 62, 80) if back_btn.collidepoint(mouse_pos) else (30, 43, 56)
             pygame.draw.rect(self.game.screen, back_bg_color, back_btn, border_radius=6)
+            
             back_text = self.fonts["body"].render("< BACK", True, (255, 255, 255))
             self.game.screen.blit(back_text, back_text.get_rect(center=back_btn.center))
 
+            # 5. Input System Processing
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
+                    import sys
                     sys.exit()
 
                 if volume_slider.handle_event(event):
                     pygame.mixer.music.set_volume(volume_slider.value)
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1 and back_btn.collidepoint(event.pos):
-                        in_settings = False
+                    if event.button == 1:
+                        # Fullscreen Logic Block
+                        if fullscreen_btn.collidepoint(event.pos):
+                            if is_fs:
+                                # Return to default window configurations. 
+                                # Tip: Replace 1280, 720 with your game's original base window sizes if different.
+                                base_w, base_h = 1280, 720 
+                                self.game.screen = pygame.display.set_mode((base_w, base_h))
+                                self.game.is_fullscreen = False
+                            else:
+                                # Fetch native display monitor dimensions to eliminate off-center drift
+                                display_info = pygame.display.Info()
+                                native_w = display_info.current_w
+                                native_h = display_info.current_h
+                                
+                                self.game.screen = pygame.display.set_mode(
+                                    (native_w, native_h), 
+                                    pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF
+                                )
+                                self.game.is_fullscreen = True
+
+                        # Back Action
+                        if back_btn.collidepoint(event.pos):
+                            in_settings = False
 
             pygame.display.flip()
             self.game.clock.tick(30)
@@ -912,7 +963,7 @@ class Ui:
         label_font = self.fonts["body"]       
         value_font = self.fonts["caption"]    
         back_font  = self.fonts["body"]       
-        grid_font  = self.fonts["caption"]    
+        grid_font  = self.fonts["caption"]    # For the car selection grid items
 
         WIDTH    = self.game.screen.get_width()
         HEIGHT   = self.game.screen.get_height()
