@@ -2,30 +2,35 @@ BIOMES = {
     "badlands": {
         "tree_density": 0.3,
         "background_images": [
-            "grass_mud",
-            "tree1",
+            "sand",
+            "savan",
+        ],
+        "scenery_images": [
             "deadtree",
             "deadbush",
         ],
         "particle_effect": None,
         "road_weathering": 0.2
     },
-
     "winter": {
         "tree_density": 0.9,
         "background_images": [
             "snow",
+        ],
+        "scenery_images": [
             "snowpine",
+            "snowtree",
         ],
         "particle_effect": None,
         "road_weathering": 0.5
     },
-
     "grassland": {
         "tree_density": 0.4,
         "background_images": [
             "grass",
             "grass1",
+        ],
+        "scenery_images": [
             "tree1",
             "tree2",
             "tree3",
