@@ -149,25 +149,20 @@ class Ui:
         while paused:
             mouse_pos = pygame.mouse.get_pos()
             
-            # Draw the popup window background card
             pygame.draw.rect(self.game.screen, (30, 43, 56), popup_rect, border_radius=12)
             pygame.draw.rect(self.game.screen, (255, 215, 0), popup_rect, 2, border_radius=12) # Gold border
 
-            # Title text inside the popup box
             title_surf = self.fonts["header"].render("GAME PAUSED", True, (255, 255, 255))
             self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 120)))
 
-            # Hover color checks
             continue_color = (0, 200, 100) if continue_btn.collidepoint(mouse_pos) else (44, 62, 80)
             exit_color     = (200, 50, 50)  if exit_btn.collidepoint(mouse_pos)     else (44, 62, 80)
             quit_color     = (150, 25, 25)  if quit_btn.collidepoint(mouse_pos)     else (44, 62, 80)
 
-            # Draw Buttons
             pygame.draw.rect(self.game.screen, continue_color, continue_btn, border_radius=6)
             pygame.draw.rect(self.game.screen, exit_color, exit_btn, border_radius=6)
             pygame.draw.rect(self.game.screen, quit_color, quit_btn, border_radius=6)
 
-            # Draw Button Labels
             cont_txt = self.fonts["body"].render("CONTINUE", True, (255, 255, 255))
             self.game.screen.blit(cont_txt, cont_txt.get_rect(center=continue_btn.center))
 
@@ -177,7 +172,6 @@ class Ui:
             quit_txt = self.fonts["body"].render("QUIT GAME", True, (255, 255, 255))
             self.game.screen.blit(quit_txt, quit_txt.get_rect(center=quit_btn.center))
 
-            # Event loop monitoring inside the pause state
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -197,7 +191,6 @@ class Ui:
                             paused = False
                             return "exit" 
                         
-                        # --- NEW: Direct Hard Quit Action ---
                         elif quit_btn.collidepoint(event.pos):
                             pygame.quit()
                             import sys
