@@ -306,6 +306,7 @@ class AssetLoader:
         self.music["police"] = music_dir / "guardian_theme.mp3"
         self.music["shepard"] = music_dir / "shepard.mp3"
         self.music["speed"] = music_dir / "freebird.mp3"
+        self.music["outro"] = music_dir / "outromusic.mp3"
 
     def load_sounds(self):
         sound_dir = Path("assets/sounds")

@@ -1285,48 +1285,194 @@ class Ui:
             self.game.clock.tick(30)
 
     def ending(self, respect):
+        """
+        GTA-style mission end card.
+        Title -> subtitle -> Stats
+        """
         result = respect
-        t = 0
-        overlay = pygame.Surface((WIDTH, 420), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 150))
-        self.game.screen.blit(overlay, (0, 180))
-        while t < 3:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
+        W = self.game.screen.get_width()
+        H = self.game.screen.get_height()
+        XC, YC = W // 2, H // 2
+ 
+        # ── colours ───────────────────────────────────────────────────────────
+        GOLD      = (212, 175, 55)
+        WHITE     = (255, 255, 255)
+        DIM       = (190, 190, 190)
+        RULE_COL  = (200, 200, 200)
+        FAIL_COL  = (200, 60, 60)
+ 
+        title_col = GOLD if result else FAIL_COL
+ 
+        # ── panel geometry ────────────────────────────────────────────────────
+        PANEL_W  = 420
+        ROW_H    = 36       # height of each stat row
+        ROW_GAP  = 2
+        PADDING  = 24
+ 
+        # stat rows: (label, value_string | None-for-stars)
+        mission_time = self.game.gametime()
+        chased       = getattr(self.game, "chased", False)
+        health       = self.game.health if result else 0
+ 
+        stat_rows = [
+            ("Time Taken",    mission_time),
+            ("Clean Run",     "DNF" if not result else ("Yes" if not chased else "No")),
+            ("Respect Earned",  "stars"),   # rendered specially
+        ]
+ 
+        n_rows    = len(stat_rows)
+        PANEL_H   = PADDING + n_rows * (ROW_H + ROW_GAP) + PADDING + ROW_H  # extra row for completion
+ 
+        # vertically position panel below the subtitle
+        TITLE_Y    = YC - 130
+        SUBTITLE_Y = YC - 65
+        PANEL_Y    = SUBTITLE_Y + 34
+        PANEL_X    = XC - PANEL_W // 2
+ 
+        panel_rect = pygame.Rect(PANEL_X, PANEL_Y, PANEL_W, PANEL_H)
+ 
+        # ── star image ────────────────────────────────────────────────────────
+        star_raw = self.game.assets.get_image("star")
+        star_img = pygame.transform.smoothscale(star_raw, (24, 24))
+ 
+        # ── Continue button (bottom-right, GTA-style) ─────────────────────────
+        cont_font = self.fonts["highlight"]
+        cont_surf = cont_font.render("Continue  ►", True, WHITE)
+        cont_rect = cont_surf.get_rect(bottomright=(W - 28, H - 22))
+        key_surf  = self.fonts["caption"].render("[ENTER]", True, DIM)
+        key_rect  = key_surf.get_rect(bottomright=(W - 28, cont_rect.top - 4))
+ 
+        # ── animation state ───────────────────────────────────────────────────
+        t             = 0.0
+        phase         = 0          # 0=title, 1=subtitle, 2=stats+continue
+        rows_revealed = 0
+        waiting       = False      # True once all rows shown; waiting for click
+ 
+        sfx_played = [False, False, False]   # guards per-phase sfx
 
-            if result:
-                mission_surf1 = self.fonts["bungeeshade"].render("MiSSiON PaSSeD", True, ("#FEFEFE"))
-                mission_surf2 = self.fonts["caption"].render("Get to school", True, ("#FEFEFE"))
-                star_surf     = self.fonts["body"].render(("ReSPeCT: " if self.game.health else "ReSPeCT: NONE"), True, ("#FEFEFE"))
-            else:
-                mission_surf1 = self.fonts["bungeeshade"].render("MiSSiON FaiLeD", True, ("#FEFEFE"))
-                mission_surf2 = self.fonts["caption"].render("You're late!", True, ("#FEFEFE"))
-            mission_rect1 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE-100))
-            mission_rect2 = mission_surf2.get_rect(center=(X_CENTRE, Y_CENTRE-42))
-            star_rect     = mission_surf2.get_rect(center=(X_CENTRE-100, Y_CENTRE+125))
-            clock_surf    = self.fonts["body"].render("Mission time: " + self.game.gametime(), True, ("#FEFEFE"))
-            clock_rect    = clock_surf.get_rect(center=(X_CENTRE, Y_CENTRE+100))
-            self.game.screen.blit(mission_surf1, mission_rect1)
-
-            if t < 1:
-                self.game.sfx("slap", 1)
-            if t > 1:
-                if t < 2:
-                    self.game.sfx("slap", 3)
-                self.game.screen.blit(mission_surf2, mission_rect2)
-            if t > 2:
-                self.game.sfx("slap", 2)
-                self.game.screen.blit(clock_surf, clock_rect)
-                if result:
-                    self.game.screen.blit(star_surf, star_rect)
-                    if self.game.health:
-                        for i in range(self.game.health):
-                            self.game.screen.blit(self.game.star_img, (X_CENTRE + 100 - (69 + i * 40), Y_CENTRE + 120))
-            pygame.display.flip()
+        self.game.music[1] = False
+        self.game.vlc("outro", 1, False)
+ 
+        while True:
             dt = self.game.clock.tick(30) / 1000
             t += dt
+ 
+            # ── phase transitions ─────────────────────────────────────────────
+            if t >= 1.0 and phase == 0:
+                phase = 1
+            if t >= 2.0 and phase == 1:
+                phase = 2
+            if phase == 2:
+                rows_revealed = min(n_rows, int((t - 2.0) / 0.35) + 1)
+                if rows_revealed >= n_rows:
+                    waiting = True
+ 
+            # ── sfx ───────────────────────────────────────────────────────────
+            if phase >= 0 and not sfx_played[0]:
+                self.game.sfx("slap", 1); sfx_played[0] = True
+            if phase >= 1 and not sfx_played[1]:
+                self.game.sfx("slap", 3); sfx_played[1] = True
+            if phase >= 2 and not sfx_played[2]:
+                self.game.sfx("slap", 2); sfx_played[2] = True
+ 
+            # ── events ────────────────────────────────────────────────────────
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit(); sys.exit()
+                if waiting:
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        return
+                    if event.type == pygame.KEYDOWN and event.key in (
+                            pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_SPACE):
+                        return
+ 
+            # ── draw ──────────────────────────────────────────────────────────
+            # semi-transparent dark overlay over whatever is already on screen
+            overlay = pygame.Surface((W, H), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 170))
+            self.game.screen.blit(overlay, (0, 0))
+ 
+            # ── TITLE ─────────────────────────────────────────────────────────
+            if result:
+                title_str = "MiSSiON PaSSeD"
+            else:
+                title_str = "MiSSiON FaiLeD"
+ 
+            title_surf = self.fonts["bungeeshade"].render(title_str, True, title_col)
+            self.game.screen.blit(title_surf,
+                                  title_surf.get_rect(center=(XC, TITLE_Y)))
+ 
+            # ── SUBTITLE ──────────────────────────────────────────────────────
+            if phase >= 1:
+                sub_str  = "Get to school on time!" if result else "You're late!"
+                sub_surf = self.fonts["highlight"].render(sub_str, True, WHITE)
+                self.game.screen.blit(sub_surf,
+                                      sub_surf.get_rect(center=(XC, SUBTITLE_Y)))
+ 
+            # ── STATS PANEL ───────────────────────────────────────────────────
+            if phase >= 2:
+                # frosted panel background
+                panel_surf = pygame.Surface((PANEL_W, PANEL_H), pygame.SRCALPHA)
+                panel_surf.fill((0, 0, 0, 100))
+                self.game.screen.blit(panel_surf, panel_rect.topleft)
+ 
+                # top rule line
+                pygame.draw.line(self.game.screen, RULE_COL,
+                                 (PANEL_X, PANEL_Y),
+                                 (PANEL_X + PANEL_W, PANEL_Y), 1)
+ 
+                for i in range(rows_revealed):
+                    label, value = stat_rows[i]
+                    ry = PANEL_Y + PADDING + i * (ROW_H + ROW_GAP)
+ 
+                    # row rule
+                    pygame.draw.line(self.game.screen, (*RULE_COL, 80),
+                                     (PANEL_X, ry + ROW_H),
+                                     (PANEL_X + PANEL_W, ry + ROW_H), 1)
+ 
+                    # label
+                    lbl = self.fonts["body"].render(label, True, WHITE)
+                    self.game.screen.blit(lbl, (PANEL_X + 8, ry + (ROW_H - lbl.get_height()) // 2))
+ 
+                    # value
+                    if value == "stars":
+                        # draw star icons right-aligned
+                        sx = PANEL_X + PANEL_W - 8
+                        sy = ry + (ROW_H - star_img.get_height()) // 2
+                        for _ in range(health):
+                            sx -= star_img.get_width() + 4
+                            self.game.screen.blit(star_img, (sx, sy))
+                        if health == 0:
+                            none_s = self.fonts["caption"].render("NONE", True, FAIL_COL)
+                            self.game.screen.blit(none_s, none_s.get_rect(
+                                midright=(PANEL_X + PANEL_W - 8, ry + ROW_H // 2)))
+                    elif value is not None:
+                        val_surf = self.fonts["body"].render(str(value), True, DIM)
+                        self.game.screen.blit(val_surf, val_surf.get_rect(
+                            midright=(PANEL_X + PANEL_W - 8, ry + ROW_H // 2)))
+ 
+                # bottom rule
+                bottom_y = PANEL_Y + PADDING + n_rows * (ROW_H + ROW_GAP)
+                pygame.draw.line(self.game.screen, RULE_COL,
+                                 (PANEL_X, bottom_y),
+                                 (PANEL_X + PANEL_W, bottom_y), 1)
+ 
+                # completion row
+                comp_pct  = 100 if result else 0
+                comp_lbl  = self.fonts["highlight"].render(f"Completion  {comp_pct}%", True, WHITE)
+                self.game.screen.blit(comp_lbl,
+                                      comp_lbl.get_rect(center=(XC, bottom_y + ROW_H // 2 + 4)))
+ 
+            # ── Continue button ────────────────────────────────────────────────
+            if waiting:
+                # subtle pulse so player knows it's clickable
+                alpha = int(180 + 75 * math.sin(t * 4))
+                c_surf = cont_font.render("Continue  ►", True, (*WHITE, alpha))
+                self.game.screen.blit(c_surf, cont_rect)
+                self.game.screen.blit(key_surf, key_rect)
+ 
+            pygame.display.flip()
+ 
 
     def stats_menu(self):
         viewing_stats = True
