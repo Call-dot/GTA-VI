@@ -65,12 +65,13 @@ class Game:
         self.stat_presets = CAR_MODELS
         
         for idx, car_key in enumerate(self.car_options):
-            preset = self.stat_presets[idx % len(self.stat_presets)]
+            preset = self.stat_presets[self.car_options[idx]]
             self.car_stats_database[car_key] = preset
 
         self.player_model = None
         self.player_img = None
         self.star_img = self.assets.get_image("star")
+        self.playerdata = None
 
         self.playermode = 0
         self.playerspeed = 0
@@ -97,6 +98,8 @@ class Game:
         self.current_biome = random.choice(list(BIOMES.values()))["name"]
         self.bg_tiler_init()
 
+        self.max_speed = 0
+        self.handling = 0
         self.health = 5
         self.flash_timer = 0
         self.flash_interval = 150  # milliseconds
@@ -134,6 +137,9 @@ class Game:
         self.player_x = X_CENTRE
         self.player_y = HEIGHT - SPACE_ABOVE_PLAYER
         self.player_vx = 0
+        self.max_speed = MAX_SPEED
+        self.handling = HANDLING
+        self.autoalign = AUTO_LANE_ALIGN
         self.player_rect = None
         self.player_hitbox = None
         self.playerjump = False
@@ -266,7 +272,7 @@ class Game:
         if self.speeding:
             acceleration = (ULTRA_SPEED - self.playerspeed) * 2
         else:
-            acceleration = (MAX_SPEED - self.playerspeed) * 2
+            acceleration = (self.max_speed - self.playerspeed) * 2
         self.playerspeed += acceleration * self.dt
         
     def decelerate(self, friction):
@@ -294,7 +300,7 @@ class Game:
             elif self.playerdir == 2:
                 target_v = MAX_TURN_SPEED
             else:
-                if AUTO_LANE_ALIGN:
+                if self.autoalign:
                     target_v = 0
                 else:
                     target_v = self.player_vx
@@ -303,7 +309,7 @@ class Game:
         if self.speeding:
             self.player_vx *= (self.playerspeed / ULTRA_SPEED)
         else:
-            self.player_vx *= (self.playerspeed / MAX_SPEED)
+            self.player_vx *= (self.playerspeed / self.max_speed)
         self.player_x += self.player_vx * self.dt
         
         if self.player_x > WIDTH+50:
@@ -579,7 +585,7 @@ class Game:
                 self.assets.get_image("policecar1"),
                 X_CENTRE,
                 -100,
-                MAX_SPEED // 0.8,
+                self.max_speed // 0.8,
                 0,
                 "down"
             )
@@ -680,8 +686,8 @@ class Game:
         print("[POWERUP] Speed boost activated!")
  
     def on_speed_powerup_end(self):
-        if self.playerspeed > MAX_SPEED:
-            self.playerspeed = MAX_SPEED
+        if self.playerspeed > self.max_speed:
+            self.playerspeed = self.max_speed
         self.music[1] = False
         print("[POWERUP] Speed boost ended.")
 

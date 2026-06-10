@@ -953,6 +953,11 @@ class Ui:
                             self.game.player_model = chosen_key
                             self.game.player_img   = self.game.assets.get_image(chosen_key)
                             self.game.current_car_idx = idx
+                            self.game.playerdata = self.game.stat_presets[chosen_key]
+                            self.game.max_speed = MAX_SPEED * (self.game.playerdata["speed"] / 100 + 0.5)
+                            self.game.handling = HANDLING * self.game.playerdata["control"] / 100
+                            self.game.health = self.game.playerdata["lives"]
+                            self.game.autoalign = self.game.playerdata["auto_align"]
                             selecting = False
                             return True
 
@@ -1144,7 +1149,7 @@ class Ui:
             align_lbl = label_font.render("Auto Align", True, (255, 255, 255))
             self.game.screen.blit(align_lbl, (stats_x, align_y))
 
-            is_on       = car_stats["auto_align"] > 50
+            is_on       = car_stats["auto_align"]
             status_text = "ON" if is_on else "OFF"
             status_color= (46, 204, 113) if is_on else (231, 76, 60)
 
