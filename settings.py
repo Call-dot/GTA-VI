@@ -31,7 +31,7 @@ SCENE_SIZE_X = 50
 SCENE_SIZE_Y = 500
 ROAD_SIZE_X = (TILE_SIZE_X + LINE_SIZE_X) / 2
 NUM_WEATHERING_PATTERNS = 8
-NOT_BRITISH_DRIVING = False
+NOT_BRITISH_DRIVING = True
 TRAFFIC = 0.02
 
 MIN_LIGHT_TIME = 5
@@ -46,7 +46,7 @@ DEADLINE = 30600
 CAR_MODELS = {
             "red_car": {"speed": 85, "control": 70, "lives": 3, "auto_align": True},
             "pink_car": {"speed": 95, "control": 60, "lives": 2, "auto_align": False},
-            "babyblue_car": {"speed": 60, "control": 90, "lives": 4, "auto_align": True},
+            "babyblue_car": {"speed": 60, "control": 90, "lives": 40, "auto_align": True},
             "camo_car": {"speed": 75, "control": 75, "lives": 3, "auto_align": True},
             "darkblue_car": {"speed": 90, "control": 65, "lives": 2, "auto_align": False},
             "name_car": {"speed": 50, "control": 95, "lives": 5, "auto_align": True},

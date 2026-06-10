@@ -31,7 +31,7 @@ class Police(pygame.sprite.Sprite):
             apparent_speed = 21
         else:
             if self.game.speeding:
-                apparent_speed = self.speed - ULTRA_SPEED
+                apparent_speed = self.speed + self.game.max_speed - 2 * self.game.playerspeed
             else:
                 apparent_speed = self.speed - self.game.playerspeed
         

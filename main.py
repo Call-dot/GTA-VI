@@ -11,6 +11,7 @@ from entities.npc import Npc
 from entities.enemy import Police
 from systems.ui import Ui
 from systems.powerups import *
+from profile import load_profile, award_respect, apply_settings
 
 class Game:
     def __init__(self):
@@ -50,6 +51,8 @@ class Game:
         self.assets.load_fonts()
         self.assets.load_sounds()
         self.ui = Ui(self)
+        self.profile = load_profile()
+        apply_settings(self.profile, self)
         self.fonts = {
             "title": self.assets.get_font("honk"),
             "subtitle": self.assets.get_font("pixelify"),
@@ -60,12 +63,12 @@ class Game:
         }
 
         self.car_options = self.assets.car_models
-
         self.car_stats_database = {}
         self.stat_presets = CAR_MODELS
-        
-        for idx, car_key in enumerate(self.car_options):
-            preset = self.stat_presets[self.car_options[idx]]
+        for car_key in self.car_options:
+            preset = self.stat_presets.get(car_key, {
+                "speed": 70, "control": 70, "lives": 3, "auto_align": True
+            })
             self.car_stats_database[car_key] = preset
 
         self.player_model = None
@@ -118,6 +121,7 @@ class Game:
         self.stealing = False
         self.speeding = False
         self.speeding_timer  = 0.0
+        self.show_hitboxes = False
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
@@ -150,6 +154,7 @@ class Game:
         self.inventory = None
         self.speeding = False
         self.speeding_timer = 0.0
+        self.show_hitboxes = False
 
         self.npcs.empty()
         self.enemies.empty()
@@ -183,6 +188,9 @@ class Game:
             self.respect = False
 
         save_run(self)
+
+        if self.respect and self.health > 0:
+            award_respect(self.profile, self.health)
 
         self.ui.ending(self.respect)
         print(self.tiles)
@@ -398,16 +406,14 @@ class Game:
         self.screen.blit(clock_surf, clock_rect)
         half_width = rect.width / 2
 
-        pygame.draw.rect(self.screen, "Green", (self.screen.get_width() // 2 + 300, self.screen.get_height() // 2 - 300 + self.playerspeed, 167, 169)) 
-        if HITBOX:
-
+        # pygame.draw.rect(self.screen, "Green", (self.screen.get_width() // 2 + 300, self.screen.get_height() // 2 - 300 + self.playerspeed, 167, 169)) # speedometer
+        if self.show_hitboxes:
             for npc in self.npcs:
-                pygame.draw.line(
+                pygame.draw.rect(
                     self.screen,
-                    "red",
-                    npc.rect.center,
-                    (npc.rect.centerx, npc.rect.centery),
-                    1
+                    (255, 0, 0),
+                    npc.hitbox,
+                    5
                 )
 
         if self.endpoint:

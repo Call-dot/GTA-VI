@@ -9,6 +9,10 @@ from saves import (
     save_run, load_all_saves, export_save, import_save,
     format_gametime, delete_save,
 )
+from profile import (
+    load_profile, save_profile, save_settings, apply_settings,
+    try_purchase, CAR_PRICES,
+)
 
 class Ui:
     def __init__(self, game):
@@ -84,7 +88,7 @@ class Ui:
                 new_text = self.fonts["body"].render("NEW GAME", True, (255, 255, 255))
                 self.game.screen.blit(new_text, new_text.get_rect(center=new_game_btn.center))
 
-                load_text = self.fonts["body"].render("LOAD GAME", True, (255, 255, 255))
+                load_text = self.fonts["body"].render("DEALERSHIP", True, (255, 255, 255))
                 self.game.screen.blit(load_text, load_text.get_rect(center=load_game_btn.center))
 
                 saves_text = self.fonts["body"].render("SAVES", True, (255, 255, 255))
@@ -112,9 +116,7 @@ class Ui:
                             return True
 
                         elif load_game_btn.collidepoint(event.pos):
-                            self.game.is_loaded_save = True
-                            menu_running = False
-                            return True
+                            self.shop_menu()
 
                         elif saves_btn.collidepoint(event.pos):
                             self.saves_menu()
@@ -136,15 +138,12 @@ class Ui:
         HEIGHT = self.game.screen.get_height()
         X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
 
-        # --- INCREASED: Expanded height to 380 to fit three buttons comfortably ---
-        box_w, box_h = 540, 380
+        box_w, box_h = 540, 320
         popup_rect = pygame.Rect(X_CENTRE - box_w // 2, Y_CENTRE - box_h // 2, box_w, box_h)
 
-        # --- RE-ALIGNED: Clean 3-button stack positioning ---
         btn_w, btn_h = 380, 55
-        continue_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 40, btn_w, btn_h)
-        exit_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 25, btn_w, btn_h)
-        quit_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 90, btn_w, btn_h)
+        continue_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 5, btn_w, btn_h)
+        exit_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 65, btn_w, btn_h)
 
         while paused:
             mouse_pos = pygame.mouse.get_pos()
@@ -153,24 +152,19 @@ class Ui:
             pygame.draw.rect(self.game.screen, (255, 215, 0), popup_rect, 2, border_radius=12) # Gold border
 
             title_surf = self.fonts["header"].render("GAME PAUSED", True, (255, 255, 255))
-            self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 120)))
+            self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 90)))
 
             continue_color = (0, 200, 100) if continue_btn.collidepoint(mouse_pos) else (44, 62, 80)
             exit_color     = (200, 50, 50)  if exit_btn.collidepoint(mouse_pos)     else (44, 62, 80)
-            quit_color     = (150, 25, 25)  if quit_btn.collidepoint(mouse_pos)     else (44, 62, 80)
 
             pygame.draw.rect(self.game.screen, continue_color, continue_btn, border_radius=6)
             pygame.draw.rect(self.game.screen, exit_color, exit_btn, border_radius=6)
-            pygame.draw.rect(self.game.screen, quit_color, quit_btn, border_radius=6)
 
             cont_txt = self.fonts["body"].render("CONTINUE", True, (255, 255, 255))
             self.game.screen.blit(cont_txt, cont_txt.get_rect(center=continue_btn.center))
 
             exit_txt = self.fonts["body"].render("EXIT TO MENU", True, (255, 255, 255))
             self.game.screen.blit(exit_txt, exit_txt.get_rect(center=exit_btn.center))
-
-            quit_txt = self.fonts["body"].render("QUIT GAME", True, (255, 255, 255))
-            self.game.screen.blit(quit_txt, quit_txt.get_rect(center=quit_btn.center))
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -190,11 +184,6 @@ class Ui:
                         elif exit_btn.collidepoint(event.pos):
                             paused = False
                             return "exit" 
-                        
-                        elif quit_btn.collidepoint(event.pos):
-                            pygame.quit()
-                            import sys
-                            sys.exit()
 
             pygame.display.flip()
             self.game.clock.tick(30)
@@ -536,96 +525,400 @@ class Ui:
             g.bg_tiler()
             g.draw()
 
-        # ── show end screen ───────────────────────────────────────────
         g.end_run()
 
 
+    # SHOP
+
+    def shop_menu(self):
+        """
+        Car shop.  Displays all cars in a grid with prices.
+        Owned cars are shown with a green "OWNED" badge.
+        Affordable cars can be purchased via a confirmation popup.
+        Unaffordable cars show a red "NEED X ★" label.
+        Respect counter shown top-right.
+        """
+        profile  = self.game.profile
+        all_cars = self.game.car_options   # full roster regardless of unlock state
+
+        # layout 
+        W, H     = self.game.screen.get_size()
+        XC, YC   = W // 2, H // 2
+        PAD      = 20
+        CARD_W, CARD_H = 155, 190
+        COLS     = 5
+        ROWS     = math.ceil(len(all_cars) / COLS)
+        grid_w   = COLS * CARD_W + (COLS - 1) * PAD
+        grid_x0  = XC - grid_w // 2
+        grid_y0  = 100
+
+        # ── colours ───────────────────────────────────────────────────────────
+        BG         = (20, 25, 30)
+        CARD_IDLE  = (34, 47, 62)
+        CARD_HOV   = (52, 73, 94)
+        OWNED_COL  = (39, 174, 96)
+        CANT_COL   = (180, 60, 60)
+        BUY_COL    = (41, 128, 185)
+        ACCENT     = (255, 215, 0)
+        TEXT_W     = (255, 255, 255)
+        TEXT_DIM   = (149, 165, 166)
+
+        f_title  = self.fonts["header"]
+        f_body   = self.fonts["body"]
+        f_small  = self.fonts["caption"]
+
+        back_btn = pygame.Rect(PAD, H - PAD - 50, 160, 50)
+
+        star_raw  = self.game.assets.get_image("star")
+        star_sm   = pygame.transform.smoothscale(star_raw, (22, 22))
+        star_lg   = pygame.transform.smoothscale(star_raw, (28, 28))
+
+        def card_rect(idx):
+            col = idx % COLS
+            row = idx // COLS
+            x   = grid_x0 + col * (CARD_W + PAD)
+            y   = grid_y0 + row * (CARD_H + PAD)
+            return pygame.Rect(x, y, CARD_W, CARD_H)
+
+        def draw():
+            self.game.screen.fill(BG)
+            mouse = pygame.mouse.get_pos()
+
+            # title 
+            t_surf = f_title.render("DEALERSHIP", True, ACCENT)
+            self.game.screen.blit(t_surf, t_surf.get_rect(midtop=(XC, 16)))
+
+            # respect counter (top-right)
+            resp   = profile["respect"]
+            r_lbl  = f_body.render("RESPECT:", True, TEXT_DIM)
+            r_num  = f_body.render(str(resp), True, ACCENT)
+            rx     = W - PAD - star_lg.get_width() - 6 - r_num.get_width() - 8 - r_lbl.get_width()
+            ry     = 20
+            self.game.screen.blit(r_lbl, (rx, ry))
+            self.game.screen.blit(r_num, (rx + r_lbl.get_width() + 8, ry))
+            self.game.screen.blit(star_lg, (rx + r_lbl.get_width() + 8 + r_num.get_width() + 6,
+                                            ry - 2))
+
+            # car cards 
+            for idx, car_key in enumerate(all_cars):
+                r      = card_rect(idx)
+                owned  = car_key in profile["unlocked_cars"]
+                price  = CAR_PRICES.get(car_key, 0)
+                can_buy= (not owned) and profile["respect"] >= price
+                hov    = r.collidepoint(mouse)
+
+                bg_col = CARD_HOV if hov else CARD_IDLE
+                pygame.draw.rect(self.game.screen, bg_col, r, border_radius=10)
+
+                # border: gold if hovered, green if owned
+                if owned:
+                    pygame.draw.rect(self.game.screen, OWNED_COL, r, 2, border_radius=10)
+                elif hov:
+                    pygame.draw.rect(self.game.screen, ACCENT, r, 2, border_radius=10)
+
+                # car image
+                try:
+                    ci     = self.game.assets.get_image(car_key)
+                    thumb  = pygame.transform.smoothscale(ci, (90, 90))
+                    self.game.screen.blit(thumb, thumb.get_rect(center=(r.centerx, r.y + 60)))
+                except Exception:
+                    pass
+
+                # name
+                name_s = f_small.render(car_key.replace("_", " ").title(), True, TEXT_W)
+                self.game.screen.blit(name_s, name_s.get_rect(center=(r.centerx, r.y + 115)))
+
+                # status badge
+                if owned:
+                    badge  = f_small.render("OWNED", True, OWNED_COL)
+                    self.game.screen.blit(badge, badge.get_rect(center=(r.centerx, r.y + 140)))
+                elif price == 0:
+                    badge  = f_small.render("FREE", True, ACCENT)
+                    self.game.screen.blit(badge, badge.get_rect(center=(r.centerx, r.y + 140)))
+                else:
+                    # price with star icon
+                    p_surf = f_small.render(str(price), True,
+                                            BUY_COL if can_buy else CANT_COL)
+                    total_w = p_surf.get_width() + star_sm.get_width() + 4
+                    bx = r.centerx - total_w // 2
+                    by = r.y + 133
+                    self.game.screen.blit(p_surf, (bx, by + 2))
+                    self.game.screen.blit(star_sm, (bx + p_surf.get_width() + 4, by))
+
+                # "click to buy" hint
+                if hov and not owned and can_buy:
+                    hint = f_small.render("Click to buy", True, ACCENT)
+                    self.game.screen.blit(hint, hint.get_rect(center=(r.centerx, r.bottom - 14)))
+                elif hov and not owned and not can_buy:
+                    needed = price - profile["respect"]
+                    hint = f_small.render(f"Need {needed} more ★", True, CANT_COL)
+                    self.game.screen.blit(hint, hint.get_rect(center=(r.centerx, r.bottom - 14)))
+
+            # back button 
+            bc = (100, 110, 120) if not back_btn.collidepoint(mouse) else (140, 150, 160)
+            pygame.draw.rect(self.game.screen, bc, back_btn, border_radius=7)
+            bt = f_body.render("< BACK", True, TEXT_W)
+            self.game.screen.blit(bt, bt.get_rect(center=back_btn.center))
+
+            pygame.display.flip()
+
+        # confirm purchase
+        def confirm_purchase(car_key: str) -> bool:
+            price    = CAR_PRICES.get(car_key, 0)
+            name     = car_key.replace("_", " ").title()
+            pop_w, pop_h = 420, 220
+            pop_r    = pygame.Rect(XC - pop_w // 2, YC - pop_h // 2, pop_w, pop_h)
+            bw, bh   = 130, 48
+            yes_btn  = pygame.Rect(pop_r.centerx - bw - 15, pop_r.bottom - bh - 24, bw, bh)
+            no_btn   = pygame.Rect(pop_r.centerx + 15,       pop_r.bottom - bh - 24, bw, bh)
+
+            while True:
+                mouse = pygame.mouse.get_pos()
+                draw()   # keep shop visible behind the overlay
+
+                overlay = pygame.Surface((W, H), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 160))
+                self.game.screen.blit(overlay, (0, 0))
+
+                pygame.draw.rect(self.game.screen, (34, 47, 62), pop_r, border_radius=12)
+                pygame.draw.rect(self.game.screen, ACCENT, pop_r, 2, border_radius=12)
+
+                q  = f_body.render(f"Buy {name}?", True, TEXT_W)
+                self.game.screen.blit(q, q.get_rect(center=(pop_r.centerx, pop_r.y + 38)))
+
+                # price line with star
+                p_surf   = f_body.render(str(price), True, ACCENT)
+                cost_lbl = f_small.render("Cost: ", True, TEXT_DIM)
+                cx = pop_r.centerx - (cost_lbl.get_width() + p_surf.get_width() + star_sm.get_width() + 6) // 2
+                cy = pop_r.y + 80
+                self.game.screen.blit(cost_lbl, (cx, cy + 3))
+                cx += cost_lbl.get_width()
+                self.game.screen.blit(p_surf, (cx, cy))
+                cx += p_surf.get_width() + 4
+                self.game.screen.blit(star_sm, (cx, cy))
+
+                bal_s = f_small.render(
+                    f"Balance after: {profile['respect'] - price} ★", True, TEXT_DIM)
+                self.game.screen.blit(bal_s, bal_s.get_rect(center=(pop_r.centerx, pop_r.y + 118)))
+
+                yc = OWNED_COL if yes_btn.collidepoint(mouse) else (30, 120, 60)
+                nc = (150, 50, 50) if no_btn.collidepoint(mouse) else (80, 30, 30)
+                pygame.draw.rect(self.game.screen, yc, yes_btn, border_radius=7)
+                pygame.draw.rect(self.game.screen, nc, no_btn,  border_radius=7)
+
+                self.game.screen.blit(
+                    f_body.render("BUY", True, TEXT_W),
+                    f_body.render("BUY", True, TEXT_W).get_rect(center=yes_btn.center))
+                self.game.screen.blit(
+                    f_body.render("CANCEL", True, TEXT_W),
+                    f_body.render("CANCEL", True, TEXT_W).get_rect(center=no_btn.center))
+
+                pygame.display.flip()
+                self.game.clock.tick(30)
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit(); sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        if yes_btn.collidepoint(event.pos):
+                            return True
+                        if no_btn.collidepoint(event.pos):
+                            return False
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                        return False
+
+        def cant_afford_popup(car_key: str):
+            price  = CAR_PRICES.get(car_key, 0)
+            name   = car_key.replace("_", " ").title()
+            needed = price - profile["respect"]
+            pop_w, pop_h = 380, 170
+            pop_r  = pygame.Rect(XC - pop_w // 2, YC - pop_h // 2, pop_w, pop_h)
+            ok_btn = pygame.Rect(pop_r.centerx - 60, pop_r.bottom - 58, 120, 40)
+
+            while True:
+                mouse = pygame.mouse.get_pos()
+                draw()
+                overlay = pygame.Surface((W, H), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 160))
+                self.game.screen.blit(overlay, (0, 0))
+
+                pygame.draw.rect(self.game.screen, (50, 20, 20), pop_r, border_radius=12)
+                pygame.draw.rect(self.game.screen, CANT_COL, pop_r, 2, border_radius=12)
+
+                h1 = f_body.render("Can't afford!", True, CANT_COL)
+                self.game.screen.blit(h1, h1.get_rect(center=(pop_r.centerx, pop_r.y + 38)))
+                h2 = f_small.render(f"{name} costs {price} respect  (need {needed} more)", True, TEXT_DIM)
+                self.game.screen.blit(h2, h2.get_rect(center=(pop_r.centerx, pop_r.y + 78)))
+
+                oc = (100, 110, 120) if not ok_btn.collidepoint(mouse) else (140, 150, 160)
+                pygame.draw.rect(self.game.screen, oc, ok_btn, border_radius=6)
+                ok_s = f_body.render("OK", True, TEXT_W)
+                self.game.screen.blit(ok_s, ok_s.get_rect(center=ok_btn.center))
+
+                pygame.display.flip()
+                self.game.clock.tick(30)
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit(); sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        if ok_btn.collidepoint(event.pos):
+                            return
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                        return
+
+        # shop loop
+        running = True
+        while running:
+            draw()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit(); sys.exit()
+
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    running = False
+
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = event.pos
+
+                    if back_btn.collidepoint(pos):
+                        running = False
+                        continue
+
+                    for idx, car_key in enumerate(all_cars):
+                        if not card_rect(idx).collidepoint(pos):
+                            continue
+                        owned = car_key in profile["unlocked_cars"]
+                        if owned:
+                            break
+                        price   = CAR_PRICES.get(car_key, 0)
+                        can_buy = profile["respect"] >= price
+                        if not can_buy:
+                            cant_afford_popup(car_key)
+                        else:
+                            if confirm_purchase(car_key):
+                                try_purchase(profile, car_key)   # deducts + saves
+                        break
+
+            self.game.clock.tick(30)
+
     def settings_menu(self):
-        """Displays a simple settings menu featuring the interactive volume slider and fullscreen toggle."""
+        """Settings: volume slider, fullscreen, show hitboxes, driving side."""
         in_settings = True
+        profile = self.game.profile
+
+        WIDTH  = self.game.screen.get_width()
+        HEIGHT = self.game.screen.get_height()
+        X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
+
+        slider_w, slider_h = 300, 12
+        volume_slider = VolumeSlider(
+            x=X_CENTRE - slider_w // 2,
+            y=Y_CENTRE - 90,
+            width=slider_w,
+            height=slider_h,
+            initial_val=pygame.mixer.music.get_volume()
+        )
+
+        BTN_W, BTN_H = 420, 50
+        bx = X_CENTRE - BTN_W // 2
+
+        fullscreen_btn    = pygame.Rect(bx, Y_CENTRE - 10,  BTN_W, BTN_H)
+        hitbox_btn        = pygame.Rect(bx, Y_CENTRE + 55,  BTN_W, BTN_H)
+        driving_side_btn  = pygame.Rect(bx, Y_CENTRE + 120, BTN_W, BTN_H)
+        back_btn          = pygame.Rect(20, HEIGHT - 70,    160,   50)
+
+        # colours
+        IDLE  = (30, 43, 56)
+        HOV   = (44, 62, 80)
+        ON    = (39, 174, 96)   # green  — setting is active
+        OFF   = (150, 50, 50)   # red    — setting is inactive
 
         while in_settings:
-            # Re-fetch every loop iteration so elements rearrange instantly when window mode alters
+            # re-fetch in case window was resized / mode toggled this frame
             WIDTH  = self.game.screen.get_width()
             HEIGHT = self.game.screen.get_height()
             X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
-
-            slider_w, slider_h = 300, 12
-            volume_slider = VolumeSlider(
-                x=X_CENTRE - slider_w // 2,
-                y=Y_CENTRE - 20,  
-                width=slider_w,
-                height=slider_h,
-                initial_val=pygame.mixer.music.get_volume()
-            )
-
-            fullscreen_btn = pygame.Rect(X_CENTRE - 120, Y_CENTRE + 50, 240, 50)
-            
-            back_btn_w, back_btn_h = 160, 50
-            back_btn = pygame.Rect(20, HEIGHT - 20 - back_btn_h, back_btn_w, back_btn_h)
 
             mouse_pos = pygame.mouse.get_pos()
             self.game.screen.fill("#1B1B1B")
 
             title_surf = self.fonts["header"].render("SETTINGS", True, (255, 255, 255))
-            self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 120)))
+            self.game.screen.blit(title_surf,
+                                  title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 170)))
 
             vol_pct  = int(volume_slider.value * 100)
-            vol_surf = self.fonts["body"].render(f"MUSIC VOLUME: {vol_pct}%", True, (255, 255, 255))
-            self.game.screen.blit(vol_surf, vol_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 50)))
-            
+            vol_surf = self.fonts["body"].render(f"MUSIC VOLUME: {vol_pct}%",
+                                                 True, (255, 255, 255))
+            self.game.screen.blit(vol_surf,
+                                  vol_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 128)))
             volume_slider.draw(self.game.screen)
 
-            is_fs = getattr(self.game, 'is_fullscreen', False)
-            fs_text_str = "WINDOW MODE" if is_fs else "FULLSCREEN"
-            
-            fs_bg_color = (44, 62, 80) if fullscreen_btn.collidepoint(mouse_pos) else (30, 43, 56)
-            pygame.draw.rect(self.game.screen, fs_bg_color, fullscreen_btn, border_radius=6)
-            
-            fs_text_surf = self.fonts["body"].render(fs_text_str, True, (255, 255, 255))
-            self.game.screen.blit(fs_text_surf, fs_text_surf.get_rect(center=fullscreen_btn.center))
+            def draw_toggle(rect, label, state: bool):
+                hov   = rect.collidepoint(mouse_pos)
+                color = (ON if state else OFF) if not hov else HOV
+                pygame.draw.rect(self.game.screen, color, rect, border_radius=6)
+                state_tag = "  [ON]" if state else "  [OFF]"
+                txt = self.fonts["body"].render(label + state_tag, True, (255, 255, 255))
+                self.game.screen.blit(txt, txt.get_rect(center=rect.center))
 
-            back_bg_color = (44, 62, 80) if back_btn.collidepoint(mouse_pos) else (30, 43, 56)
-            pygame.draw.rect(self.game.screen, back_bg_color, back_btn, border_radius=6)
-            
+            is_fs = getattr(self.game, "is_fullscreen", False)
+            draw_toggle(fullscreen_btn, "FULLSCREEN", is_fs)
+
+            show_hb = getattr(self.game, "show_hitboxes", False)
+            draw_toggle(hitbox_btn, "SHOW HITBOXES", show_hb)
+
+            british = getattr(self.game, "british_driving", False)
+            side_label = "DRIVE ON: LEFT" if british else "DRIVE ON: RIGHT"
+            hov = driving_side_btn.collidepoint(mouse_pos)
+            ds_col = (44, 62, 80) if hov else (30, 43, 56)
+            pygame.draw.rect(self.game.screen, ds_col, driving_side_btn, border_radius=6)
+            ds_surf = self.fonts["body"].render(side_label, True, (255, 255, 255))
+            self.game.screen.blit(ds_surf,
+                                  ds_surf.get_rect(center=driving_side_btn.center))
+
+            back_bg = HOV if back_btn.collidepoint(mouse_pos) else IDLE
+            pygame.draw.rect(self.game.screen, back_bg, back_btn, border_radius=6)
             back_text = self.fonts["body"].render("< BACK", True, (255, 255, 255))
             self.game.screen.blit(back_text, back_text.get_rect(center=back_btn.center))
 
-            # 5. Input System Processing
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    import sys
                     sys.exit()
 
                 if volume_slider.handle_event(event):
                     pygame.mixer.music.set_volume(volume_slider.value)
 
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        # Fullscreen Logic Block
-                        if fullscreen_btn.collidepoint(event.pos):
-                            if is_fs:
-                                # Return to default window configurations. 
-                                # Tip: Replace 1280, 720 with your game's original base window sizes if different.
-                                base_w, base_h = 1280, 720 
-                                self.game.screen = pygame.display.set_mode((base_w, base_h))
-                                self.game.is_fullscreen = False
-                            else:
-                                # Fetch native display monitor dimensions to eliminate off-center drift
-                                display_info = pygame.display.Info()
-                                native_w = display_info.current_w
-                                native_h = display_info.current_h
-                                
-                                self.game.screen = pygame.display.set_mode(
-                                    (native_w, native_h), 
-                                    pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF
-                                )
-                                self.game.is_fullscreen = True
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
 
-                        # Back Action
-                        if back_btn.collidepoint(event.pos):
-                            in_settings = False
+                    if fullscreen_btn.collidepoint(event.pos):
+                        if is_fs:
+                            self.game.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+                            self.game.is_fullscreen = False
+                        else:
+                            info = pygame.display.Info()
+                            self.game.screen = pygame.display.set_mode(
+                                (info.current_w, info.current_h),
+                                pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF
+                            )
+                            self.game.is_fullscreen = True
+
+                    elif hitbox_btn.collidepoint(event.pos):
+                        self.game.show_hitboxes = not getattr(
+                            self.game, "show_hitboxes", False)
+
+                    elif driving_side_btn.collidepoint(event.pos):
+                        self.game.british_driving = not getattr(
+                            self.game, "british_driving", False)
+                        # Mirror onto the tiler so it takes effect next new game
+                        self.game.tiler.driving_side = (
+                            "left" if self.game.british_driving else "right"
+                        )
+
+                    elif back_btn.collidepoint(event.pos):
+                        save_settings(profile, self.game)
+                        in_settings = False
 
             pygame.display.flip()
             self.game.clock.tick(30)
@@ -851,21 +1144,27 @@ class Ui:
     def select_car_menu(self):
         selecting = True
         card_w, card_h = 160, 190
-        spacing_x, spacing_y = 30, 60
+        spacing_x, spacing_y = 30, 30
 
-        row1_count = 5
+        # Only show cars the player has unlocked
+        unlocked = self.game.profile.get("unlocked_cars", [self.game.car_options[0]])
+        available_cars = [c for c in self.game.car_options if c in unlocked]
+        if not available_cars:
+            available_cars = [self.game.car_options[0]]
+
+        row1_count = min(5, len(available_cars))
         row1_start_x = X_CENTRE - ((card_w * row1_count + spacing_x * (row1_count - 1)) / 2)
         row1_y = Y_CENTRE - card_h - (spacing_y / 2)
 
-        row2_count = 4
-        row2_start_x = X_CENTRE - ((card_w * row2_count + spacing_x * (row2_count - 1)) / 2)
+        row2_count = max(0, len(available_cars) - 5)
+        row2_start_x = X_CENTRE - ((card_w * row2_count + spacing_x * (max(row2_count - 1, 0))) / 2)
         row2_y = Y_CENTRE + (spacing_y / 2)
 
         self.game.music[1] = False
         self.game.vlc("menu", -1, False)
 
         rects = []
-        for idx in range(len(self.game.car_options)):
+        for idx in range(len(available_cars)):
             if idx < 5:
                 x = row1_start_x + idx * (card_w + spacing_x)
                 y = row1_y
@@ -890,11 +1189,11 @@ class Ui:
             self.game.screen.fill("#1B1B1B")
 
             welcome_surf = self.fonts["highlight"].render("WELCOME TO GTA 6", True, (255, 215, 0))
-            welcome_rect = welcome_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 0.8))
+            welcome_rect = welcome_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 0.6))
             self.game.screen.blit(welcome_surf, welcome_rect)
 
             title_surf = self.fonts["header"].render("PICK YOUR RIDE", True, (255, 255, 255))
-            title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 1.5))
+            title_rect = title_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 1.2))
             self.game.screen.blit(title_surf, title_rect)
 
             footer_surf1 = self.fonts["caption"].render("v1.0.0 Alpha", True, (120, 120, 125))
@@ -913,11 +1212,11 @@ class Ui:
                     color, border = (180, 180, 180), 2
 
                 pygame.draw.rect(self.game.screen, color, rect, border, border_radius=12)
-                car_surface = self.game.assets.get_image(self.game.car_options[idx])
+                car_surface = self.game.assets.get_image(available_cars[idx])
                 car_rect    = car_surface.get_rect(center=(rect.centerx, rect.centery - 15))
                 self.game.screen.blit(car_surface, car_rect)
 
-                clean_name = self.game.car_options[idx].replace("_", " ").title()
+                clean_name = available_cars[idx].replace("_", " ").title()
                 name_surf  = car_name_font.render(clean_name, True, (255, 255, 255))
                 name_rect  = name_surf.get_rect(center=(rect.centerx, rect.bottom - 20))
                 self.game.screen.blit(name_surf, name_rect)
@@ -955,12 +1254,12 @@ class Ui:
                     click_pos = event.pos
                     for idx, rect in enumerate(rects):
                         if rect.collidepoint(click_pos):
-                            chosen_key = self.game.car_options[idx]
+                            chosen_key = available_cars[idx]
                             self.game.player_model = chosen_key
                             self.game.player_img   = self.game.assets.get_image(chosen_key)
                             self.game.current_car_idx = idx
                             self.game.playerdata = self.game.stat_presets[chosen_key]
-                            self.game.max_speed = MAX_SPEED * (self.game.playerdata["speed"] / 100 + 0.5)
+                            self.game.max_speed = MAX_SPEED * (self.game.playerdata["speed"] / 100 + 0.3)
                             self.game.handling = HANDLING * self.game.playerdata["control"] / 100
                             self.game.health = self.game.playerdata["lives"]
                             self.game.autoalign = self.game.playerdata["auto_align"]

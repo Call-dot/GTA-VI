@@ -18,7 +18,7 @@ BIOMES = {
     "winter": {
         "name": "winter",
         "vibe": ("#BEEFED"),
-        "tree_density": 0.9,
+        "tree_density": 0.78,
         "rock_density": 0.2,
         "background_images": [
             "snow",
