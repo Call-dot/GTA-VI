@@ -94,7 +94,7 @@ class Game:
         self.scroll_offset = 0
         self.x_offset = 0
         self.ts_down = 0
-        self.current_biome = "badlands"
+        self.current_biome = random.choice(list(BIOMES.values()))["name"]
         self.bg_tiler_init()
 
         self.health = 5
@@ -128,7 +128,7 @@ class Game:
         self.igt = 0
         self.endpoint = None
         self.success = False
-        self.current_biome = "badlands" # random.choice(list(BIOMES.values()))
+        self.current_biome = random.choice(list(BIOMES.values()))["name"]
         self.respect = False
 
         self.player_x = X_CENTRE
@@ -360,7 +360,6 @@ class Game:
             center=(self.player_x, self.player_y)
         )
         hitbox = rect.inflate(-HITBOX_TOLERANCE, -HITBOX_TOLERANCE)
-        print(self.playerjump, self.jump_timer)
         
         self.player_rect = rect
         self.player_hitbox = hitbox
@@ -395,15 +394,7 @@ class Game:
 
         pygame.draw.rect(self.screen, "Green", (self.screen.get_width() // 2 + 300, self.screen.get_height() // 2 - 300 + self.playerspeed, 167, 169)) 
         if HITBOX:
-            lane = self.closest_lane()
-            font = pygame.font.SysFont(None, 36)
-            text = font.render(
-                f"Lane: {lane}",
-                True,
-                (255, 255, 255)
-            )
 
-            self.screen.blit(text, (20, 20))
             for npc in self.npcs:
                 pygame.draw.line(
                     self.screen,
@@ -540,12 +531,12 @@ class Game:
                     self.oof()
                     return  
  
-            if self.stealing and self.player_rect.colliderect(npc.rect):
-                stolen = npc.try_steal(self.player_rect)
-                self.sfx("slip", 6)
-                if stolen: 
-                    self.inventory = stolen
-                    print(f"[POWERUP] Stole: {stolen}")
+                if self.stealing and self.player_rect.colliderect(npc.rect):
+                    stolen = npc.try_steal(self.player_rect)
+                    self.sfx("slip", 6)
+                    if stolen: 
+                        self.inventory = stolen
+                        print(f"[POWERUP] Stole: {stolen}")
 
         if self.out_of_bounds(char):
             print("OUCH")
@@ -759,45 +750,75 @@ class Game:
             img = self.assets.get_image(obj["image"])
             img_rect = img.get_rect(center=(obj["x"], obj["y"]-50))
             self.screen.blit(img, img_rect)
-    
+
+    def _road_edges(self, row: str) -> tuple[float, float]:
+        """
+        Return (left_edge_x, right_edge_x) in screen pixels for a layout row.
+        """
+        NON_ROAD = {"_", " "}
+
+        first_col = next(
+            (i for i, c in enumerate(row) if c not in NON_ROAD), 0
+        )
+        last_col = next(
+            (i for i, c in reversed(list(enumerate(row))) if c not in NON_ROAD),
+            len(row) - 1,
+        )
+
+        road_width = (len(row) - 1) / 2 * (TILE_SIZE_X + LINE_SIZE_X)
+        x_start    = X_CENTRE - road_width / 2
+
+        left_x  = x_start + first_col * ROAD_SIZE_X
+        right_x = x_start + last_col * ROAD_SIZE_X
+        return left_x, right_x
+
     def terrain_blitter(self):
-        data = self.current_biome
-        bg_images = data.get("background_images", [])
-        if not bg_images:
+        data      = BIOMES[self.current_biome]
+        trim_key  = data.get("background_images")[0]
+        if not trim_key:
             return
 
-        scroll = (self.playerpos * TILE_SIZE_Y + self.scroll_offset) % 64
+        try:
+            trim_img_left = self.assets.get_image(trim_key)
+        except (KeyError, Exception):
+            return
 
-        img0 = self.assets.get_image(bg_images[0])
-        tile_w = img0.get_width()
-        tile_h = img0.get_height()
+        # Cache the flipped version
+        trim_img_right = pygame.transform.rotate(trim_img_left, 180)
 
-        cols = WIDTH // tile_w + 2
-        rows = HEIGHT // tile_h + 2
+        trim_h = trim_img_left.get_height()
+        trim_w = trim_img_left.get_width()
 
-        for row in range(rows):
-            for col in range(cols):
-                x = col * tile_w
-                y = row * tile_h - scroll
-                self.screen.blit(img0, (x, y))
+        rows_visible = HEIGHT // TILE_SIZE_Y + 3
+        start_row    = max(0, self.playerpos - rows_visible)
+        end_row      = min(len(self.tiles), self.playerpos + rows_visible)
 
-        if len(bg_images) > 1:
-            import math
-            blend = (math.sin(self.t * 0.3) + 1) / 2
-            alpha = int(blend * 180)
+        for row_index in range(start_row, end_row):
+            row_layout = self.tiles[row_index]
 
-            img1 = self.assets.get_image(bg_images[1])
-            overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            # Vertical screen position
+            y = (row_index * TILE_SIZE_Y
+                 - self.playerpos * TILE_SIZE_Y
+                 + self.scroll_offset)
 
-            for row in range(rows):
-                for col in range(cols):
-                    x = col * tile_w
-                    y = row * tile_h - scroll
-                    overlay.blit(img1, (x, y))
+            # Skip non visible rows
+            if y > HEIGHT + trim_h or y + TILE_SIZE_Y < -trim_h:
+                continue
 
-            overlay.set_alpha(alpha)
-            self.screen.blit(overlay, (0, 0))
+            left_x, right_x = self._road_edges(row_layout)
 
+            # Left trim
+            left_rect = trim_img_left.get_rect()
+            left_rect.right = int(left_x)
+            left_rect.top   = int(y)
+            self.screen.blit(trim_img_left, left_rect)
+
+            # Right trim
+            right_rect = trim_img_right.get_rect()
+            right_rect.left = int(right_x)
+            right_rect.top  = int(y)
+            self.screen.blit(trim_img_right, right_rect)
+    
     def bg_generator(self, type=None):
         """Generates strings for bgtiler"""
         if type == "weathering":
@@ -879,6 +900,9 @@ class Game:
 
                 elif char == "S":
                     img = self.assets.get_image("sidewalk_tile")
+                
+                elif char == "#":
+                    img = self.assets.get_image("crosswalk")
 
                 elif char == "9":
                     img = self.assets.get_image("U_sideroad_sidewalk")

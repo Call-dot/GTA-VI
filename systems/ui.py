@@ -988,15 +988,13 @@ class Ui:
             if result:
                 mission_surf1 = self.fonts["bungeeshade"].render("MiSSiON PaSSeD", True, ("#FEFEFE"))
                 mission_surf2 = self.fonts["caption"].render("Get to school", True, ("#FEFEFE"))
-                star_surf     = self.fonts["body"].render("Rating: ", True, ("#FEFEFE"))
-                for i in range(self.game.health):
-                    self.game.screen.blit(self.game.star_img, (X_CENTRE + 200 - (69 + i * 40), Y_CENTRE + 120))
+                star_surf     = self.fonts["body"].render(("ReSPeCT: " if self.game.health else "ReSPeCT: NONE"), True, ("#FEFEFE"))
             else:
                 mission_surf1 = self.fonts["bungeeshade"].render("MiSSiON FaiLeD", True, ("#FEFEFE"))
                 mission_surf2 = self.fonts["caption"].render("You're late!", True, ("#FEFEFE"))
             mission_rect1 = mission_surf1.get_rect(center=(X_CENTRE, Y_CENTRE-100))
             mission_rect2 = mission_surf2.get_rect(center=(X_CENTRE, Y_CENTRE-42))
-            star_rect     = mission_surf2.get_rect(center=(X_CENTRE-200, Y_CENTRE+125))
+            star_rect     = mission_surf2.get_rect(center=(X_CENTRE-100, Y_CENTRE+125))
             clock_surf    = self.fonts["body"].render("Mission time: " + self.game.gametime(), True, ("#FEFEFE"))
             clock_rect    = clock_surf.get_rect(center=(X_CENTRE, Y_CENTRE+100))
             self.game.screen.blit(mission_surf1, mission_rect1)
@@ -1012,6 +1010,9 @@ class Ui:
                 self.game.screen.blit(clock_surf, clock_rect)
                 if result:
                     self.game.screen.blit(star_surf, star_rect)
+                    if self.game.health:
+                        for i in range(self.game.health):
+                            self.game.screen.blit(self.game.star_img, (X_CENTRE + 100 - (69 + i * 40), Y_CENTRE + 120))
             pygame.display.flip()
             dt = self.game.clock.tick(30) / 1000
             t += dt
