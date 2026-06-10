@@ -136,34 +136,48 @@ class Ui:
         HEIGHT = self.game.screen.get_height()
         X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
 
-        box_w, box_h = 540, 320
+        # --- INCREASED: Expanded height to 380 to fit three buttons comfortably ---
+        box_w, box_h = 540, 380
         popup_rect = pygame.Rect(X_CENTRE - box_w // 2, Y_CENTRE - box_h // 2, box_w, box_h)
 
+        # --- RE-ALIGNED: Clean 3-button stack positioning ---
         btn_w, btn_h = 380, 55
-        continue_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 5, btn_w, btn_h)
-        exit_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 65, btn_w, btn_h)
+        continue_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 40, btn_w, btn_h)
+        exit_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 25, btn_w, btn_h)
+        quit_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 90, btn_w, btn_h)
 
         while paused:
             mouse_pos = pygame.mouse.get_pos()
             
+            # Draw the popup window background card
             pygame.draw.rect(self.game.screen, (30, 43, 56), popup_rect, border_radius=12)
             pygame.draw.rect(self.game.screen, (255, 215, 0), popup_rect, 2, border_radius=12) # Gold border
 
+            # Title text inside the popup box
             title_surf = self.fonts["header"].render("GAME PAUSED", True, (255, 255, 255))
-            self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 90)))
+            self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 120)))
 
+            # Hover color checks
             continue_color = (0, 200, 100) if continue_btn.collidepoint(mouse_pos) else (44, 62, 80)
             exit_color     = (200, 50, 50)  if exit_btn.collidepoint(mouse_pos)     else (44, 62, 80)
+            quit_color     = (150, 25, 25)  if quit_btn.collidepoint(mouse_pos)     else (44, 62, 80)
 
+            # Draw Buttons
             pygame.draw.rect(self.game.screen, continue_color, continue_btn, border_radius=6)
             pygame.draw.rect(self.game.screen, exit_color, exit_btn, border_radius=6)
+            pygame.draw.rect(self.game.screen, quit_color, quit_btn, border_radius=6)
 
+            # Draw Button Labels
             cont_txt = self.fonts["body"].render("CONTINUE", True, (255, 255, 255))
             self.game.screen.blit(cont_txt, cont_txt.get_rect(center=continue_btn.center))
 
             exit_txt = self.fonts["body"].render("EXIT TO MENU", True, (255, 255, 255))
             self.game.screen.blit(exit_txt, exit_txt.get_rect(center=exit_btn.center))
 
+            quit_txt = self.fonts["body"].render("QUIT GAME", True, (255, 255, 255))
+            self.game.screen.blit(quit_txt, quit_txt.get_rect(center=quit_btn.center))
+
+            # Event loop monitoring inside the pause state
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -182,6 +196,12 @@ class Ui:
                         elif exit_btn.collidepoint(event.pos):
                             paused = False
                             return "exit" 
+                        
+                        # --- NEW: Direct Hard Quit Action ---
+                        elif quit_btn.collidepoint(event.pos):
+                            pygame.quit()
+                            import sys
+                            sys.exit()
 
             pygame.display.flip()
             self.game.clock.tick(30)
