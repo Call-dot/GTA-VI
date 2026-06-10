@@ -532,13 +532,11 @@ class Ui:
         in_settings = True
 
         while in_settings:
-            # --- Dynamic Dimension Evaluation ---
             # Re-fetch every loop iteration so elements rearrange instantly when window mode alters
             WIDTH  = self.game.screen.get_width()
             HEIGHT = self.game.screen.get_height()
             X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
 
-            # --- Interactive Volume Slider Setup ---
             slider_w, slider_h = 300, 12
             volume_slider = VolumeSlider(
                 x=X_CENTRE - slider_w // 2,
@@ -548,7 +546,6 @@ class Ui:
                 initial_val=pygame.mixer.music.get_volume()
             )
 
-            # --- UI Component Targets ---
             fullscreen_btn = pygame.Rect(X_CENTRE - 120, Y_CENTRE + 50, 240, 50)
             
             back_btn_w, back_btn_h = 160, 50
@@ -557,18 +554,15 @@ class Ui:
             mouse_pos = pygame.mouse.get_pos()
             self.game.screen.fill("#1B1B1B")
 
-            # 1. Title Positioning
             title_surf = self.fonts["header"].render("SETTINGS", True, (255, 255, 255))
             self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 120)))
 
-            # 2. Volume Component Drawing
             vol_pct  = int(volume_slider.value * 100)
             vol_surf = self.fonts["body"].render(f"MUSIC VOLUME: {vol_pct}%", True, (255, 255, 255))
             self.game.screen.blit(vol_surf, vol_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 50)))
             
             volume_slider.draw(self.game.screen)
 
-            # 3. Fullscreen Button Rendering
             is_fs = getattr(self.game, 'is_fullscreen', False)
             fs_text_str = "WINDOW MODE" if is_fs else "FULLSCREEN"
             
@@ -578,7 +572,6 @@ class Ui:
             fs_text_surf = self.fonts["body"].render(fs_text_str, True, (255, 255, 255))
             self.game.screen.blit(fs_text_surf, fs_text_surf.get_rect(center=fullscreen_btn.center))
 
-            # 4. Back Button Rendering
             back_bg_color = (44, 62, 80) if back_btn.collidepoint(mouse_pos) else (30, 43, 56)
             pygame.draw.rect(self.game.screen, back_bg_color, back_btn, border_radius=6)
             
