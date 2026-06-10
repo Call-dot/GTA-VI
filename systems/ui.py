@@ -51,6 +51,7 @@ class Ui:
         self.game.vlc("title", -1, False)
 
         while menu_running:
+            self.game.vlc("title", -1, False)
             WIDTH  = self.game.screen.get_width()
             HEIGHT = self.game.screen.get_height()
             X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
