@@ -671,13 +671,13 @@ class Ui:
 
         # confirm purchase
         def confirm_purchase(car_key: str) -> bool:
-            price    = CAR_PRICES.get(car_key, 0)
-            name     = car_key.replace("_", " ").title()
+            price = CAR_PRICES.get(car_key, 0)
+            name = car_key.replace("_", " ").title()
             pop_w, pop_h = 420, 220
-            pop_r    = pygame.Rect(XC - pop_w // 2, YC - pop_h // 2, pop_w, pop_h)
-            bw, bh   = 130, 48
-            yes_btn  = pygame.Rect(pop_r.centerx - bw - 15, pop_r.bottom - bh - 24, bw, bh)
-            no_btn   = pygame.Rect(pop_r.centerx + 15,       pop_r.bottom - bh - 24, bw, bh)
+            pop_r = pygame.Rect(XC - pop_w // 2, H - pop_h - 69, pop_w, pop_h)
+            bw, bh = 130, 48
+            yes_btn = pygame.Rect(pop_r.centerx - bw - 15, pop_r.bottom - bh - 24, bw, bh)
+            no_btn = pygame.Rect(pop_r.centerx + 15, pop_r.bottom - bh - 24, bw, bh)
 
             while True:
                 mouse = pygame.mouse.get_pos()
@@ -690,22 +690,22 @@ class Ui:
                 pygame.draw.rect(self.game.screen, (34, 47, 62), pop_r, border_radius=12)
                 pygame.draw.rect(self.game.screen, ACCENT, pop_r, 2, border_radius=12)
 
-                q  = f_body.render(f"Buy {name}?", True, TEXT_W)
+                q = f_body.render(f"Buy {name}?", True, TEXT_W)
                 self.game.screen.blit(q, q.get_rect(center=(pop_r.centerx, pop_r.y + 38)))
 
                 # price line with star
-                p_surf   = f_body.render(str(price), True, ACCENT)
+                p_surf = f_body.render(str(price), True, ACCENT)
                 cost_lbl = f_small.render("Cost: ", True, TEXT_DIM)
                 cx = pop_r.centerx - (cost_lbl.get_width() + p_surf.get_width() + star_sm.get_width() + 6) // 2
                 cy = pop_r.y + 80
                 self.game.screen.blit(cost_lbl, (cx, cy + 3))
                 cx += cost_lbl.get_width()
-                self.game.screen.blit(p_surf, (cx, cy))
+                self.game.screen.blit(p_surf, (cx, cy-10))
                 cx += p_surf.get_width() + 4
                 self.game.screen.blit(star_sm, (cx, cy))
 
                 bal_s = f_small.render(
-                    f"Balance after: {profile['respect'] - price} ★", True, TEXT_DIM)
+                    f"Balance after: {profile['respect'] - price}", True, TEXT_DIM)
                 self.game.screen.blit(bal_s, bal_s.get_rect(center=(pop_r.centerx, pop_r.y + 118)))
 
                 yc = OWNED_COL if yes_btn.collidepoint(mouse) else (30, 120, 60)
@@ -735,11 +735,11 @@ class Ui:
                         return False
 
         def cant_afford_popup(car_key: str):
-            price  = CAR_PRICES.get(car_key, 0)
-            name   = car_key.replace("_", " ").title()
+            price = CAR_PRICES.get(car_key, 0)
+            name = car_key.replace("_", " ").title()
             needed = price - profile["respect"]
             pop_w, pop_h = 380, 170
-            pop_r  = pygame.Rect(XC - pop_w // 2, YC - pop_h // 2, pop_w, pop_h)
+            pop_r = pygame.Rect(XC - pop_w // 2, H - pop_h - 69, pop_w, pop_h)
             ok_btn = pygame.Rect(pop_r.centerx - 60, pop_r.bottom - 58, 120, 40)
 
             while True:
@@ -1472,10 +1472,12 @@ class Ui:
                                  (PANEL_X + PANEL_W, bottom_y), 1)
  
                 # completion row
-                comp_pct  = 100 if result else round((
+                comp_pct = 100 if result else round((
                     self.game.playerpos / self.game.endpoint if self.game.endpoint
                     else self.game.playerpos / SCHOOL_DISTANCE
                 ) * 100)
+                if arrived:
+                    comp_pct = 99
                 comp_lbl  = self.fonts["highlight"].render(f"Completion  {comp_pct}%", True, WHITE)
                 self.game.screen.blit(comp_lbl,
                                       comp_lbl.get_rect(center=(XC, bottom_y + ROW_H // 2 + 4)))
