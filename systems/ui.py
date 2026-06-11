@@ -80,17 +80,17 @@ class Ui:
 
                 mouse_pos = pygame.mouse.get_pos()
 
-                new_color      = (0, 200, 100)   if new_game_btn.collidepoint(mouse_pos)  else (44, 62, 80)
-                load_color     = (52, 152, 219)  if load_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
-                saves_color    = (230, 126, 34)  if saves_btn.collidepoint(mouse_pos)     else (44, 62, 80)
-                settings_color = (155, 89, 182)  if settings_btn.collidepoint(mouse_pos)  else (44, 62, 80)
-                exit_color     = (130, 20, 20)   if exit_game_btn.collidepoint(mouse_pos) else (200, 50, 50)
+                new_color = (0, 200, 100) if new_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
+                load_color = (52, 152, 219) if load_game_btn.collidepoint(mouse_pos) else (44, 62, 80)
+                saves_color = (230, 126, 34) if saves_btn.collidepoint(mouse_pos) else (44, 62, 80)
+                settings_color = (155, 89, 182) if settings_btn.collidepoint(mouse_pos) else (44, 62, 80)
+                exit_color = (130, 20, 20) if exit_game_btn.collidepoint(mouse_pos) else (200, 50, 50)
 
-                pygame.draw.rect(self.game.screen, new_color,      new_game_btn,  border_radius=8)
-                pygame.draw.rect(self.game.screen, load_color,     load_game_btn, border_radius=8)
-                pygame.draw.rect(self.game.screen, saves_color,    saves_btn,     border_radius=8)
-                pygame.draw.rect(self.game.screen, settings_color, settings_btn,  border_radius=8)
-                pygame.draw.rect(self.game.screen, exit_color,     exit_game_btn, border_radius=6)
+                pygame.draw.rect(self.game.screen, new_color, new_game_btn, border_radius=8)
+                pygame.draw.rect(self.game.screen, load_color, load_game_btn, border_radius=8)
+                pygame.draw.rect(self.game.screen, saves_color, saves_btn, border_radius=8)
+                pygame.draw.rect(self.game.screen, settings_color, settings_btn, border_radius=8)
+                pygame.draw.rect(self.game.screen, exit_color, exit_game_btn, border_radius=6)
 
                 new_text = self.fonts["body"].render("NEW GAME", True, (255, 255, 255))
                 self.game.screen.blit(new_text, new_text.get_rect(center=new_game_btn.center))
@@ -150,7 +150,7 @@ class Ui:
 
         btn_w, btn_h = 380, 55
         continue_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 5, btn_w, btn_h)
-        exit_btn     = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 65, btn_w, btn_h)
+        exit_btn = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE + 65, btn_w, btn_h)
 
         while paused:
             mouse_pos = pygame.mouse.get_pos()
@@ -162,7 +162,7 @@ class Ui:
             self.game.screen.blit(title_surf, title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 90)))
 
             continue_color = (0, 200, 100) if continue_btn.collidepoint(mouse_pos) else (44, 62, 80)
-            exit_color     = (200, 50, 50)  if exit_btn.collidepoint(mouse_pos)     else (44, 62, 80)
+            exit_color = (200, 50, 50) if exit_btn.collidepoint(mouse_pos) else (44, 62, 80)
 
             pygame.draw.rect(self.game.screen, continue_color, continue_btn, border_radius=6)
             pygame.draw.rect(self.game.screen, exit_color, exit_btn, border_radius=6)
@@ -206,19 +206,19 @@ class Ui:
         RIGHT COLUMN - Scrollable list of saved runs (click to replay)
         BOTTOM-LEFT  - Back button
         """
-        PAD           = 24
-        LEFT_W        = 260          
-        RIGHT_X       = PAD + LEFT_W + PAD 
-        RIGHT_W       = WIDTH - RIGHT_X - PAD
-        LIST_Y        = 80 
-        LIST_H        = HEIGHT - LIST_Y - PAD
-        CARD_H        = 90
-        CARD_GAP      = 8
-        CARD_STRIDE   = CARD_H + CARD_GAP
+        PAD = 24
+        LEFT_W = 260          
+        RIGHT_X = PAD + LEFT_W + PAD 
+        RIGHT_W = WIDTH - RIGHT_X - PAD
+        LIST_Y = 80 
+        LIST_H = HEIGHT - LIST_Y - PAD
+        CARD_H = 90
+        CARD_GAP = 8
+        CARD_STRIDE = CARD_H + CARD_GAP
 
-        BG            = (27, 27, 27)
-        PANEL_BG      = (34, 47, 62)
-        ACCENT        = (255, 215, 0)
+        BG = (27, 27, 27)
+        PANEL_BG = (34, 47, 62)
+        ACCENT = (255, 215, 0)
         BTN_IDLE      = (44, 62, 80)
         BTN_HOV_IMP   = (39, 174, 96)
         BTN_HOV_EXP   = (41, 128, 185)
