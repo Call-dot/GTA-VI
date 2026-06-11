@@ -30,6 +30,10 @@ class Ui:
         }
 
     def startup(self):
+        WIDTH  = self.game.screen.get_width()
+        HEIGHT = self.game.screen.get_height()
+        X_CENTRE = WIDTH // 2
+        Y_CENTRE = HEIGHT // 2
         t = 0
         pygame.mixer.music.stop()
         while t < 1:
@@ -55,6 +59,8 @@ class Ui:
             self.game.vlc("title", -1, False)
             WIDTH  = self.game.screen.get_width()
             HEIGHT = self.game.screen.get_height()
+            X_CENTRE = WIDTH // 2
+            Y_CENTRE = HEIGHT // 2
 
             school_bg_img = self.game.assets.get_image("school_bg")
             school_bg_rect = school_bg_img.get_rect()
@@ -206,6 +212,11 @@ class Ui:
         RIGHT COLUMN - Scrollable list of saved runs (click to replay)
         BOTTOM-LEFT  - Back button
         """
+        WIDTH  = self.game.screen.get_width()
+        HEIGHT = self.game.screen.get_height()
+        X_CENTRE = WIDTH // 2
+        Y_CENTRE = HEIGHT // 2
+
         PAD = 24
         LEFT_W = 260          
         RIGHT_X = PAD + LEFT_W + PAD 
@@ -811,6 +822,10 @@ class Ui:
 
     def settings_menu(self):
         """Settings: volume slider, fullscreen, show hitboxes, driving side."""
+        from settings import WIDTH, HEIGHT
+
+        OG_WIDTH = WIDTH
+        OG_HEIGHT = HEIGHT
         in_settings = True
         profile = self.game.profile
 
@@ -901,7 +916,7 @@ class Ui:
 
                     if fullscreen_btn.collidepoint(event.pos):
                         if is_fs:
-                            self.game.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+                            self.game.screen = pygame.display.set_mode((OG_WIDTH, OG_HEIGHT))
                             self.game.is_fullscreen = False
                         else:
                             info = pygame.display.Info()
@@ -1108,6 +1123,11 @@ class Ui:
             pygame.display.flip()
 
     def confirm_exit_popup(self, draw_background_callback=None):
+
+        WIDTH  = self.game.screen.get_width()
+        HEIGHT = self.game.screen.get_height()
+        X_CENTRE = WIDTH // 2
+        Y_CENTRE = HEIGHT // 2
         confirming = True
         popup_w, popup_h = 400, 200
         popup_rect = pygame.Rect(X_CENTRE - popup_w // 2, Y_CENTRE - popup_h // 2, popup_w, popup_h)
@@ -1163,6 +1183,11 @@ class Ui:
             self.game.clock.tick(30)
 
     def select_car_menu(self):
+        WIDTH  = self.game.screen.get_width()
+        HEIGHT = self.game.screen.get_height()
+        X_CENTRE = WIDTH // 2
+        Y_CENTRE = HEIGHT // 2
+
         selecting = True
         card_w, card_h = 160, 190
         spacing_x, spacing_y = 30, 30
@@ -1481,7 +1506,7 @@ class Ui:
                         comp_pct = self.game.playerpos / self.game.endpoint
                 else:
                     comp_pct = self.game.playerpos / SCHOOL_DISTANCE * 100
-
+                comp_pct = round(comp_pct)
                 comp_lbl  = self.fonts["highlight"].render(f"Completion  {comp_pct}%", True, WHITE)
                 self.game.screen.blit(comp_lbl,
                                       comp_lbl.get_rect(center=(XC, bottom_y + ROW_H // 2 + 4)))
