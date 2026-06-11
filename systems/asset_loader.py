@@ -208,6 +208,10 @@ class AssetLoader:
         self.images["school_sign"] = pygame.image.load(
             image_dir / "school_sign.png"
         ).convert_alpha()
+
+        self.images["school_bg"] = pygame.image.load(
+            image_dir / "school_bg.png"
+        ).convert_alpha()
         
         self.images["tutorial"] = pygame.image.load(
             image_dir / "tutorial.png"

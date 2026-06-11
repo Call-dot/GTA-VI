@@ -54,7 +54,11 @@ class Ui:
             self.game.vlc("title", -1, False)
             WIDTH  = self.game.screen.get_width()
             HEIGHT = self.game.screen.get_height()
-            X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
+
+            school_bg_img = self.game.assets.get_image("school_bg")
+            school_bg_rect = school_bg_img.get_rect()
+            og_props = school_bg_img.get_width() / school_bg_img.get_height()
+            school_bg_img = pygame.transform.smoothscale(school_bg_img, (HEIGHT * og_props, HEIGHT))
 
             btn_w, btn_h = 240, 55
             new_game_btn  = pygame.Rect(X_CENTRE - btn_w // 2, Y_CENTRE - 105, btn_w, btn_h)
@@ -68,6 +72,7 @@ class Ui:
             def draw_main_menu_content():
                 self.game.screen.fill("#1B1B1B")
 
+                self.game.screen.blit(school_bg_img, school_bg_rect)
                 title_surf = self.fonts["title"].render("GRAND THEFT AUTO VI", True, (255, 215, 0))
                 title_rect = title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 175))
                 self.game.screen.blit(title_surf, title_rect)
