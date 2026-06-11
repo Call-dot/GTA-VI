@@ -11,7 +11,7 @@ For the first time ever, GTA is taking place in the most chaotic car-dependent l
 
 **Experience the exhilerating daily routine of a typical St. Robert CHS student!** Fly, weave, steal, and plunder your way down Leslie Street! Will you make it to the left turn lane in time for the morning rush... or will you arrive late and get stuck in the endless queue?
 
-Watch the trailer [https://www.youtube.com/watch?v=iK0YqGCdPVo](here).
+Watch the trailer (here)[https://www.youtube.com/watch?v=iK0YqGCdPVo].
 
 ### Group members:
 - Aiden Fong
