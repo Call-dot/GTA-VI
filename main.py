@@ -637,7 +637,6 @@ class Game:
             and row[lane_index] == ".",
             char
         )
-    
     def get_player_corners(self):
         return (
             self.player_rect.topleft, 
@@ -645,7 +644,6 @@ class Game:
             self.player_rect.bottomleft, 
             self.player_rect.bottomright
         )
-
     def lane_clear(self, lane_index, y, min_distance=250):
         for npc in self.npcs:
             if npc.lane_index != lane_index:
@@ -653,7 +651,7 @@ class Game:
             if abs(npc.world_y - y) < min_distance:
                 return False
         return True
-    
+        
     def closest_lane(self):
 
         current_row = self.tile_data[self.playerpos]
@@ -708,7 +706,6 @@ class Game:
             self.activate_bomb_powerup()
 
     def activate_speed_powerup(self):
-
         self.music[1] = False
         self.vlc("speed", -1, True)
         self.speeding = True
@@ -840,9 +837,8 @@ class Game:
             # Skip non visible rows
             if y > HEIGHT + trim_h or y + TILE_SIZE_Y < -trim_h:
                 continue
-
+                
             left_x, right_x = self._road_edges(row_layout)
-
             # Left trim
             left_rect = trim_img_left.get_rect()
             left_rect.right = int(left_x)
