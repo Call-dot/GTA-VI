@@ -1472,12 +1472,16 @@ class Ui:
                                  (PANEL_X + PANEL_W, bottom_y), 1)
  
                 # completion row
-                comp_pct = 100 if result else round((
-                    self.game.playerpos / self.game.endpoint if self.game.endpoint
-                    else self.game.playerpos / SCHOOL_DISTANCE
-                ) * 100)
-                if arrived:
-                    comp_pct = 99
+                if result:
+                    comp_pct = 100
+                elif self.game.endpoint:
+                    if arrived:
+                        comp_pct = 99
+                    else:
+                        comp_pct = self.game.playerpos / self.game.endpoint
+                else:
+                    comp_pct = self.game.playerpos / SCHOOL_DISTANCE * 100
+
                 comp_lbl  = self.fonts["highlight"].render(f"Completion  {comp_pct}%", True, WHITE)
                 self.game.screen.blit(comp_lbl,
                                       comp_lbl.get_rect(center=(XC, bottom_y + ROW_H // 2 + 4)))

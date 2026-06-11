@@ -44,7 +44,7 @@ DEPARTURE_TIME = 30300
 DEADLINE = 30600
 
 CAR_MODELS = {
-            "red_car": {"speed": 85, "control": 70, "lives": 40, "auto_align": True},
+            "red_car": {"speed": 85, "control": 70, "lives": 4, "auto_align": True},
             "pink_car": {"speed": 95, "control": 60, "lives": 3, "auto_align": False},
             "babyblue_car": {"speed": 60, "control": 90, "lives": 6, "auto_align": True},
             "camo_car": {"speed": 75, "control": 75, "lives": 4, "auto_align": True},
