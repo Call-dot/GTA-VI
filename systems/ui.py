@@ -14,6 +14,7 @@ from profile import (
     try_purchase, CAR_PRICES,
 )
 
+
 class Ui:
     def __init__(self, game):
         self.game = game
@@ -976,7 +977,13 @@ class Ui:
 
         tiles = ["4C5-,:,-6C3", "SC+:+:+:+CS", "SC+:+:+:+CS", "__SC,:,:,:,CS_@"]
         tiles.extend(["SC+:+:+:+CS" if i % 2 else "SC$:+:+:$CS" for i in range(queue)])
-        tiles.extend(["______SC+:+:+:+-2999999", "______SC+`+`+`+`+`+`+`+", "______SC+`+`+`+`+`+`+`+", "______SC+`+`+`+`+`+`+`+", "______SC+:+:+:+-4000000"])
+        tiles.extend([
+            "______SC+:+:+:+-2999999", 
+            "______SC+`+`+`+`+`+`+`+", 
+            "______SC+`+`+`+`+`+`+`+", 
+            "______SC+`+`+`+`+`+`+`+", 
+            "______SC+:+:+:+-4000000"
+        ])
         tiles.extend(["SC+:+:+:+CS" for _ in range(25)])
 
         for row_idx, row in enumerate(tiles):
@@ -1023,12 +1030,20 @@ class Ui:
             self.game.scroll_offset -= self.game.playerspeed * dt
             self.game.bg_blitter(tiles)
 
-            intersection_screen_y = (intersection_row * TILE_SIZE_Y - self.game.playerpos * TILE_SIZE_Y + self.game.scroll_offset)
+            intersection_screen_y = (
+                intersection_row * TILE_SIZE_Y 
+                - self.game.playerpos * TILE_SIZE_Y 
+                + self.game.scroll_offset
+            )
             intersection_rect = pygame.Rect(0, intersection_screen_y + TILE_SIZE_Y, WIDTH, TILE_SIZE_Y)
 
             if t < 2:
                 player_y = t * TILE_SIZE_Y
-                player_x = ROAD_SIZE_X * 2 * math.sin(player_y * math.pi / (4 * TILE_SIZE_Y)) + X_CENTRE + ROAD_SIZE_X
+                player_x = (
+                    ROAD_SIZE_X * 2 
+                    * math.sin(player_y * math.pi / (4 * TILE_SIZE_Y))
+                    + X_CENTRE + ROAD_SIZE_X
+                )
                 playerangle = math.sin(player_y * math.pi * 2 / (4 * TILE_SIZE_Y)) * 30
                 player_rotated = pygame.transform.rotate(player_img, playerangle + 180)
                 rect = player_rotated.get_rect(center=(player_x, player_y))
@@ -1186,7 +1201,12 @@ class Ui:
         back_btn_rect = pygame.Rect(20, 20, back_btn_w, back_btn_h)
 
         stats_btn_w, stats_btn_h = 160, 50
-        stats_btn_rect = pygame.Rect(X_CENTRE - stats_btn_w / 2, HEIGHT - 20 - stats_btn_h, stats_btn_w, stats_btn_h)
+        stats_btn_rect = pygame.Rect(
+            X_CENTRE - stats_btn_w / 2, 
+            HEIGHT - 20 - stats_btn_h, 
+            stats_btn_w, 
+            stats_btn_h
+        )
         
         stats_font    = self.fonts["body"] 
         car_name_font = self.fonts["caption"] 

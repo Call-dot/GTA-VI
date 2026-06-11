@@ -13,6 +13,7 @@ from systems.ui import Ui
 from systems.powerups import *
 from profile import load_profile, award_respect, apply_settings
 
+
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -394,8 +395,20 @@ class Game:
         pygame.draw.rect(self.screen, pause_btn_color, pause_btn, border_radius=6)
         pygame.draw.rect(self.screen, (255, 215, 0), pause_btn, 1, border_radius=6)
         
-        pygame.draw.line(self.screen, (255, 255, 255), (pause_btn.centerx - 4, pause_btn.top + 12), (pause_btn.centerx - 4, pause_btn.bottom - 12), 3)
-        pygame.draw.line(self.screen, (255, 255, 255), (pause_btn.centerx + 4, pause_btn.top + 12), (pause_btn.centerx + 4, pause_btn.bottom - 12), 3)
+        pygame.draw.line(
+            self.screen, 
+            (255, 255, 255), 
+            (pause_btn.centerx - 4, pause_btn.top + 12), 
+            (pause_btn.centerx - 4, pause_btn.bottom - 12), 
+            3
+        )
+        pygame.draw.line(
+            self.screen, 
+            (255, 255, 255), 
+            (pause_btn.centerx + 4, pause_btn.top + 12), 
+            (pause_btn.centerx + 4, pause_btn.bottom - 12), 
+            3
+        )
 
         if self.inventory:
             powerup = POWERUP_TYPES.get(self.inventory)

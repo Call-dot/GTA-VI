@@ -2,6 +2,7 @@ import random
 from levels.roads import ROAD_TYPES
 from settings import *
 
+
 class Tiler:
     def __init__(self, game, seed=None, driving_side="right"):
         self.random = random.Random(seed)
@@ -25,14 +26,14 @@ class Tiler:
             return
         
         road_names = list(ROAD_TYPES.keys())
-
         weights = [ROAD_TYPES[name]["weight"] for name in road_names]
-
         chosen_name = self.random.choices(road_names, weights=weights, k=1)[0]
 
         self.current_road = ROAD_TYPES[chosen_name]
-
-        self.rows_remaining = self.random.randint(self.current_road["min_length"], self.current_road["max_length"])
+        self.rows_remaining = self.random.randint(
+            self.current_road["min_length"], 
+            self.current_road["max_length"]
+        )
 
     def next_row(self):
         if self.rows_remaining <= 0 or self.intersection:

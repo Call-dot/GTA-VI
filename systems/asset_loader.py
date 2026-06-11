@@ -2,6 +2,7 @@ import pygame
 import random
 from pathlib import Path
 
+
 class AssetLoader:
     def __init__(self):
         self.fonts = {}

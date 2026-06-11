@@ -10,6 +10,7 @@ ACCELERATION = 2
 TRUNK_ICON_OFFSET_Y = 10
 TRUNK_ICON_SIZE = 50
 
+
 class Npc(pygame.sprite.Sprite):
     def __init__(self, game, image, x, y, speed, lane_index, dir):
         super().__init__()
