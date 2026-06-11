@@ -119,6 +119,7 @@ class Game:
         self.tutorial = True
         self.inventory = None
         self.stealing = False
+        self.can_lick = False
         self.speeding = False
         self.speeding_timer  = 0.0
         self.show_hitboxes = False
@@ -147,6 +148,8 @@ class Game:
         self.player_rect = None
         self.player_hitbox = None
         self.playerjump = False
+        self.stealing = False
+        self.can_lick = False
         self.jump_timer = 0.0
         self.playerangle = 0
         self.tutorial = True
@@ -397,9 +400,11 @@ class Game:
         if self.inventory:
             powerup = POWERUP_TYPES.get(self.inventory)
             powerup_img = self.assets.get_image(powerup["icon"])
-            # Push powerup layout down slightly to prevent clipping under the left-side pause button
+            prompt_img = self.assets.get_image("use")
             powerup_rect = powerup_img.get_rect(topleft=(20, 75))
+            prompt_rect = prompt_img.get_rect(topleft=(20, 200))
             self.screen.blit(powerup_img, powerup_rect)
+            self.screen.blit(prompt_img, prompt_rect)
             
         clock_surf = self.fonts["highlight"].render(self.gametime(), True, ("#FEFEFE"))
         clock_rect = clock_surf.get_rect(topright=(self.screen.get_width()-20, 69))
@@ -427,6 +432,10 @@ class Game:
                 fadeout_surf = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
                 fadeout_surf.fill((200, 200, 200, int(fadefactor * 255)))
                 self.screen.blit(fadeout_surf, (0, 0))
+
+        if self.can_lick:
+            self.show_actions("steal")
+        self.can_lick = False
 
         if self.tutorial:
             self.show_actions()
@@ -542,13 +551,15 @@ class Game:
                 if npc.hitbox and self.player_hitbox.colliderect(npc.hitbox):
                     self.oof()
                     return  
- 
-                if self.stealing and self.player_rect.colliderect(npc.rect):
-                    stolen = npc.try_steal(self.player_rect)
-                    self.sfx("slip", 6)
-                    if stolen: 
-                        self.inventory = stolen
-                        print(f"[POWERUP] Stole: {stolen}")
+                
+                if self.player_rect.colliderect(npc.rect):
+                    self.can_lick = True
+                    if self.stealing:
+                        stolen = npc.try_steal(self.player_rect)
+                        self.sfx("slip", 6)
+                        if stolen: 
+                            self.inventory = stolen
+                            print(f"[POWERUP] Stole: {stolen}")
 
         if self.out_of_bounds(char):
             print("OUCH")
@@ -1058,8 +1069,11 @@ class Game:
     def x_to_lane(self, x, x_start):
         return round((x - x_start) / ROAD_SIZE_X)
 
-    def show_actions(self):
-        tutorial_img = self.assets.get_image("tutorial")
+    def show_actions(self, action=None):
+        if action == None:
+            tutorial_img = self.assets.get_image("tutorial")
+        else:
+            tutorial_img = self.assets.get_image("steal")
         tutorial_rect = tutorial_img.get_rect(center=(X_CENTRE, HEIGHT - 200))
         if self.t % 0.5 < 0.35:
             self.screen.blit(tutorial_img, tutorial_rect)

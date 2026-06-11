@@ -1294,7 +1294,6 @@ class Ui:
         H = self.game.screen.get_height()
         XC, YC = W // 2, H // 2
  
-        # ── colours ───────────────────────────────────────────────────────────
         GOLD      = (212, 175, 55)
         WHITE     = (255, 255, 255)
         DIM       = (190, 190, 190)
@@ -1303,7 +1302,6 @@ class Ui:
  
         title_col = GOLD if result else FAIL_COL
  
-        # ── panel geometry ────────────────────────────────────────────────────
         PANEL_W  = 420
         ROW_H    = 36       # height of each stat row
         ROW_GAP  = 2
@@ -1311,11 +1309,12 @@ class Ui:
  
         # stat rows: (label, value_string | None-for-stars)
         mission_time = self.game.gametime()
+        arrived      = getattr(self.game, "success", False)
         chased       = getattr(self.game, "chased", False)
         health       = self.game.health if result else 0
  
         stat_rows = [
-            ("Time Taken",    mission_time),
+            ("Arrival" if arrived else "Elapsed",    mission_time),
             ("Clean Run",     "DNF" if not result else ("Yes" if not chased else "No")),
             ("Respect Earned",  "stars"),   # rendered specially
         ]
@@ -1331,18 +1330,15 @@ class Ui:
  
         panel_rect = pygame.Rect(PANEL_X, PANEL_Y, PANEL_W, PANEL_H)
  
-        # ── star image ────────────────────────────────────────────────────────
         star_raw = self.game.assets.get_image("star")
         star_img = pygame.transform.smoothscale(star_raw, (24, 24))
  
-        # ── Continue button (bottom-right, GTA-style) ─────────────────────────
         cont_font = self.fonts["highlight"]
         cont_surf = cont_font.render("Continue  ►", True, WHITE)
         cont_rect = cont_surf.get_rect(bottomright=(W - 28, H - 22))
         key_surf  = self.fonts["caption"].render("[ENTER]", True, DIM)
         key_rect  = key_surf.get_rect(bottomright=(W - 28, cont_rect.top - 4))
  
-        # ── animation state ───────────────────────────────────────────────────
         t             = 0.0
         phase         = 0          # 0=title, 1=subtitle, 2=stats+continue
         rows_revealed = 0
@@ -1357,7 +1353,6 @@ class Ui:
             dt = self.game.clock.tick(30) / 1000
             t += dt
  
-            # ── phase transitions ─────────────────────────────────────────────
             if t >= 1.0 and phase == 0:
                 phase = 1
             if t >= 2.0 and phase == 1:
@@ -1367,7 +1362,6 @@ class Ui:
                 if rows_revealed >= n_rows:
                     waiting = True
  
-            # ── sfx ───────────────────────────────────────────────────────────
             if phase >= 0 and not sfx_played[0]:
                 self.game.sfx("slap", 1); sfx_played[0] = True
             if phase >= 1 and not sfx_played[1]:
@@ -1375,7 +1369,6 @@ class Ui:
             if phase >= 2 and not sfx_played[2]:
                 self.game.sfx("slap", 2); sfx_played[2] = True
  
-            # ── events ────────────────────────────────────────────────────────
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit(); sys.exit()
@@ -1386,13 +1379,11 @@ class Ui:
                             pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_SPACE):
                         return
  
-            # ── draw ──────────────────────────────────────────────────────────
             # semi-transparent dark overlay over whatever is already on screen
             overlay = pygame.Surface((W, H), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 170))
             self.game.screen.blit(overlay, (0, 0))
  
-            # ── TITLE ─────────────────────────────────────────────────────────
             if result:
                 title_str = "MiSSiON PaSSeD"
             else:
@@ -1402,14 +1393,12 @@ class Ui:
             self.game.screen.blit(title_surf,
                                   title_surf.get_rect(center=(XC, TITLE_Y)))
  
-            # ── SUBTITLE ──────────────────────────────────────────────────────
             if phase >= 1:
                 sub_str  = "Get to school on time!" if result else "You're late!"
                 sub_surf = self.fonts["highlight"].render(sub_str, True, WHITE)
                 self.game.screen.blit(sub_surf,
                                       sub_surf.get_rect(center=(XC, SUBTITLE_Y)))
  
-            # ── STATS PANEL ───────────────────────────────────────────────────
             if phase >= 2:
                 # frosted panel background
                 panel_surf = pygame.Surface((PANEL_W, PANEL_H), pygame.SRCALPHA)
@@ -1458,12 +1447,14 @@ class Ui:
                                  (PANEL_X + PANEL_W, bottom_y), 1)
  
                 # completion row
-                comp_pct  = 100 if result else 0
+                comp_pct  = 100 if result else round((
+                    self.game.playerpos / self.game.endpoint if self.game.endpoint
+                    else self.game.playerpos / SCHOOL_DISTANCE
+                ) * 100)
                 comp_lbl  = self.fonts["highlight"].render(f"Completion  {comp_pct}%", True, WHITE)
                 self.game.screen.blit(comp_lbl,
                                       comp_lbl.get_rect(center=(XC, bottom_y + ROW_H // 2 + 4)))
  
-            # ── Continue button ────────────────────────────────────────────────
             if waiting:
                 # subtle pulse so player knows it's clickable
                 alpha = int(180 + 75 * math.sin(t * 4))

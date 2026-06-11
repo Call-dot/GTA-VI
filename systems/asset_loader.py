@@ -213,6 +213,14 @@ class AssetLoader:
             image_dir / "tutorial.png"
         ).convert_alpha()
 
+        self.images["steal"] = pygame.image.load(
+            image_dir / "steal.png"
+        ).convert_alpha()
+
+        self.images["use"] = pygame.image.load(
+            image_dir / "use.png"
+        ).convert_alpha()
+
         def load_car(model):
             self.images[model] = pygame.image.load(
                 image_dir / f"{model}.png"
