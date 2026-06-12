@@ -327,7 +327,7 @@ class AssetLoader:
         self.sound["slap"] = pygame.mixer.Sound(
             sound_dir / "slap.mp3"
         )
-        self.sound["slap"].set_volume(0.3)
+        self.sound["slap"].set_volume(0.1)
 
         self.sound["kid_slap"] = pygame.mixer.Sound(
             sound_dir / "kid-slap-oh.mp3"

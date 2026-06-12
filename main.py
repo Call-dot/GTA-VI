@@ -11,7 +11,7 @@ from entities.npc import Npc
 from entities.enemy import Police
 from systems.ui import Ui
 from systems.powerups import *
-from profile import load_profile, award_respect, apply_settings
+from profiler import load_profile, award_respect, apply_settings
 
 
 class Game:
@@ -123,7 +123,6 @@ class Game:
         self.can_lick = False
         self.speeding = False
         self.speeding_timer  = 0.0
-        self.show_hitboxes = False
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
@@ -158,7 +157,6 @@ class Game:
         self.inventory = None
         self.speeding = False
         self.speeding_timer = 0.0
-        self.show_hitboxes = False
 
         self.npcs.empty()
         self.enemies.empty()
@@ -332,10 +330,10 @@ class Game:
         if not self.playerjump:
             self.jump_timer = 0
         else:
-            if self.jump_timer <= 0:
+            if self.jump_timer == 0:
                 self.jump_timer = AIRTIME
             else:
-                self.jump_timer = max(0, self.jump_timer - self.dt)
+                self.jump_timer = max(-0.05, self.jump_timer - self.dt)
 
     def vibes(self, dt):
         pass
@@ -427,12 +425,13 @@ class Game:
         # pygame.draw.rect(self.screen, "Green", (self.screen.get_width() // 2 + 300, self.screen.get_height() // 2 - 300 + self.playerspeed, 167, 169)) # speedometer
         if self.show_hitboxes:
             for npc in self.npcs:
-                pygame.draw.rect(
-                    self.screen,
-                    (255, 0, 0),
-                    npc.hitbox,
-                    5
-                )
+                if npc.hitbox:
+                    pygame.draw.rect(
+                        self.screen,
+                        (255, 0, 0),
+                        npc.hitbox,
+                        5
+                    )
 
         if self.endpoint:
             fade_start = self.endpoint - (END_THRESHOLD // 3)

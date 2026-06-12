@@ -9,7 +9,7 @@ from saves import (
     save_run, load_all_saves, export_save, import_save,
     format_gametime, delete_save,
 )
-from profile import (
+from profiler import (
     load_profile, save_profile, save_settings, apply_settings,
     try_purchase, CAR_PRICES,
 )
@@ -939,6 +939,7 @@ class Ui:
                         )
 
                     elif back_btn.collidepoint(event.pos):
+                        print("saving", profile)
                         save_settings(profile, self.game)
                         in_settings = False
 

@@ -1,6 +1,5 @@
 # JSON save architecture suggested by AI + the internet, polished and customized by human hands
 
-# profile.py
 # Global persistent player data — settings, respect points, and unlocked cars.
 # Stored as a single JSON file (PROFILE_PATH) separate from per-run saves.
 #
