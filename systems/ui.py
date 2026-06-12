@@ -414,6 +414,7 @@ class Ui:
             pygame.display.flip()
             return hovered_card   # so the event handler knows what's under the cursor
 
+        last_hovered = None
         running = True
         clock   = self.game.clock
         while running:
@@ -423,6 +424,7 @@ class Ui:
                 feedback_msg = ""
 
             hovered_card = draw()
+            last_hovered = hovered_card if hovered_card else last_hovered
             mouse        = pygame.mouse.get_pos()
 
             for event in pygame.event.get():
@@ -454,8 +456,8 @@ class Ui:
                         if selected_idx is not None and 0 <= selected_idx < len(records):
                             ok = export_save(records[selected_idx]["_path"])
                             set_feedback("Exported!" if ok else "Export cancelled.")
-                        elif hovered_card is not None:
-                            ok = export_save(records[hovered_card]["_path"])
+                        elif last_hovered is not None:
+                            ok = export_save(records[last_hovered]["_path"])
                             set_feedback("Exported!" if ok else "Export cancelled.")
                         else:
                             set_feedback("Hover over or click a run first.")

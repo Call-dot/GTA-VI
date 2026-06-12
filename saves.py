@@ -22,7 +22,7 @@ import time
 import tkinter as tk
 from tkinter import filedialog
 
-SAVES_DIR  = "saves"        # relative to the working directory; created on first write
+SAVES_DIR  = "saves/runs"        # relative to the working directory; created on first write
 SAVE_MAGIC = "GTA6_SAVE_V1"  # written into every save; checked on import
 
 
