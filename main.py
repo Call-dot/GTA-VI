@@ -123,6 +123,8 @@ class Game:
         self.can_lick = False
         self.speeding = False
         self.speeding_timer  = 0.0
+        self.suspension = False
+        self.suspension_timer  = 0.0
 
         if DEBUG or not(DEBUG):
             self.corner_test = True
@@ -157,6 +159,8 @@ class Game:
         self.inventory = None
         self.speeding = False
         self.speeding_timer = 0.0
+        self.suspension = False
+        self.suspension_timer  = 0.0
 
         self.npcs.empty()
         self.enemies.empty()
@@ -300,7 +304,8 @@ class Game:
             self.reverse(BRAKE_POWER)
         else:
             if self.playerjump:
-                self.decelerate(AIR_RESISTANCE)
+                if not self.suspension:
+                    self.decelerate(AIR_RESISTANCE)
             else:
                 self.decelerate(FRICTION)
 
@@ -330,7 +335,7 @@ class Game:
         if not self.playerjump:
             self.jump_timer = 0
         else:
-            if self.jump_timer == 0:
+            if self.jump_timer == 0 or (self.suspension and self.jump_timer <= 0):
                 self.jump_timer = AIRTIME
             else:
                 self.jump_timer = max(-0.05, self.jump_timer - self.dt)
@@ -689,26 +694,36 @@ class Game:
             self.speeding_timer -= dt
             if self.speeding_timer <= 0:
                 self.speeding = False
-                self.speeding_timer  = 0.0
+                self.speeding_timer = 0.0
                 self.on_speed_powerup_end()
+
+        if self.suspension:
+            self.suspension_timer -= dt
+            if self.suspension_timer <= 0:
+                self.suspension = False
+                self.suspension_timer = 0.0
+                self.on_flutter_powerup_end
     
     def use_powerup(self):
         if self.inventory is None:
             return
  
         powerup = self.inventory
+        print(self.inventory)
         self.inventory = None   # consume it
  
         if powerup == "speed":
             self.activate_speed_powerup()
         elif powerup == "bomb":
             self.activate_bomb_powerup()
+        elif powerup == "suspension":
+            self.activate_flutter_powerup()
 
     def activate_speed_powerup(self):
         self.music[1] = False
         self.vlc("speed", -1, True)
         self.speeding = True
-        self.speeding_timer  = SPEED_POWERUP_DURATION
+        self.speeding_timer = SPEED_POWERUP_DURATION
         print("[POWERUP] Speed boost activated!")
  
     def on_speed_powerup_end(self):
@@ -716,6 +731,14 @@ class Game:
             self.playerspeed = self.max_speed
         self.music[1] = False
         print("[POWERUP] Speed boost ended.")
+
+    def activate_flutter_powerup(self):
+        self.suspension = True
+        self.suspension_timer = FLUTTER_JUMP_DURATION
+        print("[POWERUP] Flutter jump activated!")
+ 
+    def on_flutter_powerup_end(self):
+        print("[POWERUP] Flutter jump ended.")
 
     def activate_bomb_powerup(self):
         print(f"[POWERUP] Bomb! clearing radius={BLAST_RADIUS}px")

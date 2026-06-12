@@ -14,13 +14,19 @@ POWERUP_TYPES = {
         "color": (255, 80, 80),
         "icon": "bomb",
     },
+    "suspension": {
+        "label": "suspension",
+        "color": (255, 80, 80),
+        "icon": "suspension",
+    }
 }
 
 # None = no powerup
 POWERUP_WEIGHTS = {
-    None:    70,
-    "speed": 18,
+    None:    67,
+    "speed": 16,
     "bomb":  12,
+    "suspension": 5,
 }
 
 BLAST_RADIUS = 350
@@ -28,6 +34,8 @@ BLAST_POWER = 42
 
 ULTRA_SPEED = 690
 SPEED_POWERUP_DURATION = 8.0
+
+FLUTTER_JUMP_DURATION = 67
 
 def weighted_random_powerup():
     """Return a powerup key (or None) sampled according to POWERUP_WEIGHTS."""
