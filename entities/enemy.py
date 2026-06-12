@@ -54,6 +54,7 @@ class Police(pygame.sprite.Sprite):
         dx = origin["origin_x"] - self.world_x
         dy = origin["origin_y"] - self.world_y
         dy = dy if dy else 1
+        dx = dx if dx else 1
         self.hitbox = None
         self.world_x -= BLAST_POWER * dx / dy
         self.world_y -= BLAST_POWER
