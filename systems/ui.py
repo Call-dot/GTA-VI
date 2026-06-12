@@ -1260,7 +1260,7 @@ class Ui:
         def draw_everything():
             self.game.screen.fill("#1B1B1B")
 
-            welcome_surf = self.fonts["highlight"].render("WELCOME TO GTA 6", True, (255, 215, 0))
+            welcome_surf = self.fonts["highlight"].render("WELCOME TO ST. ROBERT CHS", True, (255, 215, 0))
             welcome_rect = welcome_surf.get_rect(center=(X_CENTRE, HEIGHT // 8 * 0.6))
             self.game.screen.blit(welcome_surf, welcome_rect)
 
