@@ -564,7 +564,7 @@ class Game:
             if not self.player_hitbox or not self.player_rect:
                 continue
  
-            if not self.playerjump:
+            if self.jump_timer <= 0:
                 if npc.hitbox and self.player_hitbox.colliderect(npc.hitbox):
                     self.oof()
                     return  
