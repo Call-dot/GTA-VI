@@ -76,6 +76,11 @@ class Ui:
             exit_btn_w, exit_btn_h = 220, 50
             exit_game_btn = pygame.Rect(20, HEIGHT - 20 - exit_btn_h, exit_btn_w, exit_btn_h)
 
+            footer_surf1 = self.fonts["caption"].render("v1.0.0 Alpha", True, ("#AFAFAF"))
+            footer_rect1 = footer_surf1.get_rect(bottomright=(WIDTH - 20, HEIGHT - 20))
+            footer_surf2 = self.fonts["caption"].render("Thefted by Aiden Fong, Tristan Man, and Carey Xin", True, ("#AFAFAF"))
+            footer_rect2 = footer_surf2.get_rect(bottomright=footer_rect1.topright)
+
             def draw_main_menu_content():
                 self.game.screen.fill("#1B1B1B")
 
@@ -83,6 +88,8 @@ class Ui:
                 title_surf = self.fonts["title"].render("GRAND THEFT AUTO VI", True, (255, 215, 0))
                 title_rect = title_surf.get_rect(center=(X_CENTRE, Y_CENTRE - 175))
                 self.game.screen.blit(title_surf, title_rect)
+                self.game.screen.blit(footer_surf1, footer_rect1)
+                self.game.screen.blit(footer_surf2, footer_rect2)
 
                 mouse_pos = pygame.mouse.get_pos()
 
@@ -861,6 +868,17 @@ class Ui:
             WIDTH  = self.game.screen.get_width()
             HEIGHT = self.game.screen.get_height()
             X_CENTRE, Y_CENTRE = WIDTH // 2, HEIGHT // 2
+            slider_w, slider_h = 300, 12
+            volume_slider.x = X_CENTRE - slider_w // 2
+            volume_slider.y = Y_CENTRE - 90
+
+            BTN_W, BTN_H = 420, 50
+            bx = X_CENTRE - BTN_W // 2
+
+            fullscreen_btn.update(bx, Y_CENTRE - 10, BTN_W, BTN_H)
+            hitbox_btn.update(bx, Y_CENTRE + 55, BTN_W, BTN_H)
+            driving_side_btn.update(bx, Y_CENTRE + 120, BTN_W, BTN_H)
+            back_btn.update(20, HEIGHT - 70, 160, 50)
 
             mouse_pos = pygame.mouse.get_pos()
             self.game.screen.fill("#1B1B1B")
@@ -1250,7 +1268,7 @@ class Ui:
 
             footer_surf1 = self.fonts["caption"].render("v1.0.0 Alpha", True, (120, 120, 125))
             footer_rect1 = footer_surf1.get_rect(bottomright=(WIDTH - 20, HEIGHT - 20))
-            footer_surf2 = self.fonts["caption"].render("Developed by Aiden, Tristan, and Carey", True, (120, 120, 125))
+            footer_surf2 = self.fonts["caption"].render("Thefted by Aiden, Tristan, and Carey", True, (120, 120, 125))
             footer_rect2 = footer_surf2.get_rect(bottomright=footer_rect1.topright)
             self.game.screen.blit(footer_surf1, footer_rect1)
             self.game.screen.blit(footer_surf2, footer_rect2)
