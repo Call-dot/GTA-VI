@@ -1,25 +1,25 @@
-# ICS3U - Computer Science CPT
+GTA‑VI Web Prototype (client-side)
 
-At RobStar Games, we hear you loud and clear. You want GTA VI.
+This folder contains a minimal JavaScript/Canvas port of the game's core loop. It is intended as a prototype and is not a line-by-line port of the original Pygame code — instead it reproduces gameplay elements (tile generation, NPCs, collisions, powerups) so you can run the game in a browser.
 
-That's why we're proud to announce that GTA VI will not release on November 19, 2026. Actually, it releases now!
+How to preview locally
 
-Unfortunately, a few compromises had to be made to meet this new release date...
+1. You can serve the `gh-pages` branch with GitHub Pages (automatic when branch is published) or preview locally by serving these files from any static server.
 
-### Grand Theft Auto VI
-For the first time ever, GTA is taking place in the most chaotic car-dependent location on Earth: St. Robert CHS! 
+2. Example using Python 3:
 
-**Experience the exhilerating daily routine of a typical St. Robert CHS student!** Fly, weave, steal, and plunder your way down Leslie Street! Will you make it to the left turn lane in time for the morning rush... or will you arrive late and get stuck in the endless queue?
+   python -m http.server 8000
 
-Watch the trailer https://www.youtube.com/watch?v=iK0YqGCdPVo
+3. Open http://127.0.0.1:8000 in your browser.
 
-### Credits
-- Aiden Fong
-- Tristan Man
-- Carey Xin
+Controls
 
----
-### How to play
-1. Clone the repository. If you don't know how to use Git, click code -> download as zip. Then unzip in the location of your choice.
-2. Get Pygame and Python.
-3. Run main.py!
+- W / ArrowUp: accelerate
+- S / ArrowDown: brake/reverse
+- A / ArrowLeft: steer left
+- D / ArrowRight: steer right
+- Q: use/steal powerup (not implemented in prototype)
+
+Save format
+
+The Export Save button downloads a JSON file compatible in shape with the project's `saves.save_run()` format. Some fields are simplified, but the keys (`seed`, `igt`, `health`, `car_model`, `tiles`, `tile_data`, `endpoint`, `saved_at`) match the original layout so server-side tools can consume the files.
