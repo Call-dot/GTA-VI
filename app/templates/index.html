@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>GTA-VI — Saves</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+  </head>
+  <body>
+    <main class="container">
+      <h1>Saved runs</h1>
+      {% if records %}
+        <ul class="saves">
+        {% for r in records %}
+          <li>
+            <a href="/saves/{{ r._basename }}">{{ r._basename }}</a>
+            — health: {{ r.health }} — igt: {{ "%.2f"|format(r.igt) }} — success: {{ r.success }}
+            [<a href="/download/{{ r._basename }}">download</a>]
+          </li>
+        {% endfor %}
+        </ul>
+      {% else %}
+        <p>No saves found. Play the game locally to generate saves into <code>saves/runs/</code>.</p>
+      {% endif %}
+
+      <hr>
+      <p>Preview: small animated tile replay. This is a lightweight visualization — the native Pygame experience is richer.</p>
+    </main>
+  </body>
+</html>
