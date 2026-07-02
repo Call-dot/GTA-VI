@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GTA-VI (Web) — Prototype</title>
+  <link rel="stylesheet" href="/web/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>GTA‑VI — Web Prototype</h1>
+      <p class="muted">Playable in the browser — minimalist port of the core game loop. Use arrow keys / WASD to drive.</p>
+    </header>
+
+    <section id="menu" class="panel">
+      <div class="row">
+        <label>Choose car:</label>
+        <select id="car-select">
+          <option value="red_car">Red</option>
+          <option value="pink_car">Pink</option>
+          <option value="babyblue_car">Baby Blue</option>
+          <option value="camo_car">Camo</option>
+          <option value="darkblue_car">Dark Blue</option>
+          <option value="name_car">Name</option>
+          <option value="orange_car">Orange</option>
+          <option value="black_car">Black</option>
+          <option value="lime_car">Lime</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Seed (optional):</label>
+        <input id="seed" placeholder="leave empty for random" />
+      </div>
+      <div class="buttons">
+        <button id="start">Start Game</button>
+        <button id="load-sample">Load Sample Save</button>
+      </div>
+    </section>
+
+    <section id="game" class="hidden">
+      <div class="hud">
+        <div>Health: <span id="health">5</span></div>
+        <div>IGT: <span id="igt">0.0</span></div>
+        <div>Seed: <span id="seed-display">-</span></div>
+        <div><button id="pause">Pause</button> <button id="export">Export Save</button></div>
+      </div>
+      <canvas id="screen" width="540" height="960"></canvas>
+      <div class="controls">Controls: W/S or Up/Down = throttle/brake, A/D or Left/Right = steer, Q = steal/use powerup</div>
+    </section>
+
+    <section id="end" class="panel hidden">
+      <h2 id="end-title">Run ended</h2>
+      <p id="end-summary"></p>
+      <div class="buttons">
+        <button id="restart">Back to Menu</button>
+        <button id="download-end">Download Save</button>
+      </div>
+    </section>
+
+    <footer class="muted small">This is a prototype port — many features from the original Pygame version are simplified.</footer>
+  </main>
+
+  <script src="/web/game.js" defer></script>
+</body>
+</html>
